@@ -56,7 +56,11 @@ Punch List — <count> projects
 
 - **Name**: Project name, left-aligned (from registry)
 - **State**: `[A]` through `[G]` with label — read from the registry entry (Ideation, Defining, Proving, Delivering, Evolving, Sustaining, Sunsetting)
-- **GitHub**: Show `yes` if `githubRepo` is set in the config, otherwise `no`
+- **GitHub**: Determined by `githubRepo` and `githubVisibility` fields in the config:
+  - `githubRepo` is null or not set → `no`
+  - `githubRepo` is set and `githubVisibility` is `"public"` → `🌐`
+  - `githubRepo` is set and `githubVisibility` is `"private"` → `🔒`
+  - `githubRepo` is set and `githubVisibility` is null → `yes`
 - **Local**: Show `yes` if `localDirectory` is set in the config, otherwise `no`
 
 ### 4. Group by state (optional enhancement)
@@ -64,19 +68,19 @@ Punch List — <count> projects
 If there are 5 or more projects, group them by state with headers. Always show a column header line at the top right-aligned over the last two columns:
 
 ```
-Punch List — 6 projects                          GH Repo  Local
+Punch List — 6 projects                          GitHub    Local
 
 [A] Ideation
-  My Cool Project                                  yes     yes
-  Another Idea                                     no      no
+  My Cool Project                                 🌐         yes
+  Another Idea                                    no         no
 
 [B] Defining
-  Secret Sauce                                     no      no
+  Secret Sauce                                    yes        no
 
 [D] Delivering
-  Production Widget                                yes     yes
-  API Revamp                                       yes     yes
-  Docs Refresh                                     no      yes
+  Production Widget                               🔒         yes
+  API Revamp                                      yes        yes
+  Docs Refresh                                    no         yes
 ```
 
 For fewer than 5 projects, use the flat list format with the same column header line.

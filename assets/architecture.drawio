@@ -13,12 +13,12 @@
       <mxGeometry x="550" y="75" width="70" height="80" as="geometry" />
     </mxCell>
     <mxCell id="user-label" value="(human-as-general-contractor)" style="text;html=1;fontSize=11;align=center;fontColor=#6c8ebf;" vertex="1" parent="1">
-      <mxGeometry x="510" y="158" width="150" height="20" as="geometry" />
+      <mxGeometry x="450" y="158" width="270" height="20" as="geometry" />
     </mxCell>
 
     <!-- ── CLAUDE CODE ── -->
     <mxCell id="claude" value="Claude Code&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal;&quot;&gt;CLI / IDE Extension&lt;/font&gt;" style="rounded=1;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;fontStyle=1;arcSize=8;" vertex="1" parent="1">
-      <mxGeometry x="400" y="200" width="370" height="60" as="geometry" />
+      <mxGeometry x="400" y="220" width="370" height="60" as="geometry" />
     </mxCell>
 
     <!-- Arrow: User → Claude Code -->

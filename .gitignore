@@ -1,0 +1,8 @@
+# Local Claude Code settings (machine-specific, not repo state)
+.claude/
+
+# IDE settings
+.vscode/
+
+# macOS
+.DS_Store

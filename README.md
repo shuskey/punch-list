@@ -143,7 +143,7 @@ How the system components connect at runtime:
 
 ```mermaid
 flowchart TD
-    User["👤 Developer\n(human-as-general-contractor)"]
+    User["Developer\n(human-as-general-contractor)"]
 
     Claude["Claude Code\nCLI / IDE Extension"]
 

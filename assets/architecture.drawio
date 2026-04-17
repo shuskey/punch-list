@@ -12,7 +12,7 @@
     <mxCell id="user" value="Developer" style="shape=mxgraph.general.person2;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1;" vertex="1" parent="1">
       <mxGeometry x="550" y="75" width="70" height="80" as="geometry" />
     </mxCell>
-    <mxCell id="user-label" value="(human-in-the-loop)" style="text;html=1;fontSize=11;align=center;fontColor=#6c8ebf;" vertex="1" parent="1">
+    <mxCell id="user-label" value="(human-as-general-contractor)" style="text;html=1;fontSize=11;align=center;fontColor=#6c8ebf;" vertex="1" parent="1">
       <mxGeometry x="510" y="158" width="150" height="20" as="geometry" />
     </mxCell>
 

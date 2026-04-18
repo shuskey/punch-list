@@ -76,6 +76,22 @@ foreach ($skillPath in Get-ChildItem -Path $SkillsDir -Directory) {
 }
 
 Write-Host ""
+Write-Host "Installing punchlist.py to ~/.punch-list/"
+$PunchListDir = Join-Path $HOME ".punch-list"
+New-Item -ItemType Directory -Path $PunchListDir -Force | Out-Null
+Copy-Item -Path (Join-Path $PSScriptRoot "punchlist.py") -Destination (Join-Path $PunchListDir "punchlist.py") -Force
+Write-Host "  + punchlist.py"
+
+Write-Host ""
+Write-Host "Installing Python dependency: typer"
+try {
+    pip install typer --quiet 2>&1 | Out-Null
+    Write-Host "  + typer"
+} catch {
+    Write-Host "  ! pip install typer failed — install manually"
+}
+
+Write-Host ""
 Write-Host "Done. Installed: $installed  Replaced: $replaced  Skipped: $skipped"
 Write-Host ""
 Write-Host "Edit skills in: $SkillsDir"

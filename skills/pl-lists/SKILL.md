@@ -11,7 +11,7 @@ Manage multiple Punch Lists: create new ones, switch the active list, rename, or
 
 Run:
 ```bash
-python punchlist.py list show --json
+python ~/.punch-list/punchlist.py list show --json
 ```
 
 If it exits non-zero, tell the user:
@@ -56,7 +56,7 @@ If only one list exists, tell the user and stop.
 Present all lists with AskUserQuestion (👉 on current). On selection:
 
 ```bash
-python punchlist.py config set-list <slug>
+python ~/.punch-list/punchlist.py config set-list <slug>
 ```
 
 Confirm: `Switched to **<name>**. All Punch List commands now operate on this list.`
@@ -73,12 +73,12 @@ If only one list exists and it has `name: null`, ask the user to name it first:
 > Your current list is unnamed. Give it a name before adding a second list.
 
 ```bash
-python punchlist.py list rename <current-slug> "<new-name>"
+python ~/.punch-list/punchlist.py list rename <current-slug> "<new-name>"
 ```
 
 Then create:
 ```bash
-python punchlist.py list create <slug> "<name>"
+python ~/.punch-list/punchlist.py list create <slug> "<name>"
 ```
 
 Offer to switch:
@@ -86,7 +86,7 @@ Offer to switch:
 
 If yes:
 ```bash
-python punchlist.py config set-list <slug>
+python ~/.punch-list/punchlist.py config set-list <slug>
 ```
 
 Confirm: `Created **<name>** (\`<slug>\`). <Now active. | Current list unchanged — still on **<name>**.>`
@@ -100,7 +100,7 @@ If no slug supplied, ask which list via AskUserQuestion.
 Ask: `New name for **<name>**?`
 
 ```bash
-python punchlist.py list rename <slug> "<new-name>"
+python ~/.punch-list/punchlist.py list rename <slug> "<new-name>"
 ```
 
 Confirm: `Renamed to **<new name>**. Slug \`<slug>\` is unchanged.`
@@ -121,12 +121,12 @@ Use AskUserQuestion to collect input. If it doesn't match (case-insensitive), ca
 
 If the list being deleted is active, ask which list to switch to first:
 ```bash
-python punchlist.py config set-list <other-slug>
+python ~/.punch-list/punchlist.py config set-list <other-slug>
 ```
 
 Then delete:
 ```bash
-python punchlist.py list delete <slug> --force
+python ~/.punch-list/punchlist.py list delete <slug> --force
 ```
 
 Confirm: `Deleted **<name>**. <Now active on **<new current>**.>`

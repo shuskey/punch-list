@@ -11,7 +11,7 @@ Display the full detail card for a single tracked project, including open GitHub
 
 If an argument was provided, find the matching slug from:
 ```bash
-python punchlist.py project list --json
+python ~/.punch-list/punchlist.py project list --json
 ```
 Match against `slug` (exact) or `name` (case-insensitive, partial). If no match, show available projects and stop.
 
@@ -21,7 +21,7 @@ If no argument, use the current project (the CLI will default to it automaticall
 
 Run:
 ```bash
-python punchlist.py project show <slug> --set-current --json
+python ~/.punch-list/punchlist.py project show <slug> --set-current --json
 ```
 
 This returns the full config plus `checklistSummary` array, and records the project as current in the registry.

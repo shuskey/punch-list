@@ -11,7 +11,7 @@ Interactive checklist manager for a Punch List project.
 
 If invoked with a slug or name argument, resolve it:
 ```bash
-python punchlist.py project list --json
+python ~/.punch-list/punchlist.py project list --json
 ```
 Match against `slug` (exact) or `name` (case-insensitive, partial). If no match, show available projects and stop.
 
@@ -22,7 +22,7 @@ Set `PROJECT_SLUG` to the resolved slug (or omit from CLI calls to use the defau
 ## Load Checklist Data
 
 ```bash
-python punchlist.py checklist lists --project-slug <slug> --json
+python ~/.punch-list/punchlist.py checklist lists --project-slug <slug> --json
 ```
 
 Returns `{ projectSlug, currentList, lists: [{ id, name, totalItems, completedItems, isCurrent }] }`.
@@ -50,7 +50,7 @@ Checklists — <project name>
 
 To show items, run:
 ```bash
-python punchlist.py checklist show <list-id> --project-slug <slug> --json
+python ~/.punch-list/punchlist.py checklist show <list-id> --project-slug <slug> --json
 ```
 
 Items format:
@@ -64,7 +64,7 @@ Ask:
 
 Set this list as current:
 ```bash
-python punchlist.py checklist set-current <list-id> --project-slug <slug>
+python ~/.punch-list/punchlist.py checklist set-current <list-id> --project-slug <slug>
 ```
 
 Show:
@@ -93,12 +93,12 @@ If user enters an item number, ask:
 
 **Mark complete** (toggle):
 ```bash
-python punchlist.py checklist toggle <item-id> --project-slug <slug>
+python ~/.punch-list/punchlist.py checklist toggle <item-id> --project-slug <slug>
 ```
 
 **Delete item**:
 ```bash
-python punchlist.py checklist delete-item <item-id> --project-slug <slug>
+python ~/.punch-list/punchlist.py checklist delete-item <item-id> --project-slug <slug>
 ```
 
 ### Add Item
@@ -107,14 +107,14 @@ Ask: `Item text?`
 Ask: `Quantity? (e.g., "2 lbs", "3") — or press Enter to skip.`
 
 ```bash
-python punchlist.py checklist add "<text>" [--quantity "<qty>"] --project-slug <slug> --list-id <list-id>
+python ~/.punch-list/punchlist.py checklist add "<text>" [--quantity "<qty>"] --project-slug <slug> --list-id <list-id>
 ```
 
 ### Clear All Completed
 
 Get completed items from:
 ```bash
-python punchlist.py checklist show <list-id> --project-slug <slug> --json
+python ~/.punch-list/punchlist.py checklist show <list-id> --project-slug <slug> --json
 ```
 
 Count items where `completed: true`. Confirm:
@@ -122,7 +122,7 @@ Count items where `completed: true`. Confirm:
 
 If confirmed, call for each completed item:
 ```bash
-python punchlist.py checklist delete-item <item-id> --project-slug <slug>
+python ~/.punch-list/punchlist.py checklist delete-item <item-id> --project-slug <slug>
 ```
 
 ### Reorder
@@ -133,7 +133,7 @@ Ask: `[U] Move up  [D] Move down`
 Convert to 1-based new position (up = current position - 1, down = current position + 1).
 
 ```bash
-python punchlist.py checklist reorder <item-id> <new-position> --list-id <list-id> --project-slug <slug>
+python ~/.punch-list/punchlist.py checklist reorder <item-id> <new-position> --list-id <list-id> --project-slug <slug>
 ```
 
 ### Rename List
@@ -141,7 +141,7 @@ python punchlist.py checklist reorder <item-id> <new-position> --list-id <list-i
 Ask: `New name for this list?`
 
 ```bash
-python punchlist.py checklist rename-list <list-id> "<new-name>" --project-slug <slug>
+python ~/.punch-list/punchlist.py checklist rename-list <list-id> "<new-name>" --project-slug <slug>
 ```
 
 ### Delete List
@@ -150,7 +150,7 @@ Ask: `Delete "<name>" and all its items? [Y/N]`
 
 If confirmed:
 ```bash
-python punchlist.py checklist delete-list <list-id> --force --project-slug <slug>
+python ~/.punch-list/punchlist.py checklist delete-list <list-id> --force --project-slug <slug>
 ```
 
 ## New List Flow
@@ -158,7 +158,7 @@ python punchlist.py checklist delete-list <list-id> --force --project-slug <slug
 Ask: `Name for the new list?`
 
 ```bash
-python punchlist.py checklist create-list "<name>" --set-current --project-slug <slug>
+python ~/.punch-list/punchlist.py checklist create-list "<name>" --set-current --project-slug <slug>
 ```
 
 Then immediately enter **Manage a List** for the new list (re-fetch data first).

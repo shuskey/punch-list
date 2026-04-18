@@ -68,6 +68,16 @@ for skill_path in "$SKILLS_DIR"/*/; do
 done
 
 echo ""
+echo "Installing punchlist.py to ~/.punch-list/"
+mkdir -p "$HOME/.punch-list"
+cp "$(dirname "${BASH_SOURCE[0]}")/punchlist.py" "$HOME/.punch-list/punchlist.py"
+echo "  + punchlist.py"
+
+echo ""
+echo "Installing Python dependency: typer"
+pip install typer --quiet && echo "  + typer" || echo "  ! pip install typer failed — install manually"
+
+echo ""
 echo "Done. Installed: $installed  Replaced: $replaced  Skipped: $skipped"
 echo ""
 echo "Edit skills in: $SKILLS_DIR"

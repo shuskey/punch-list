@@ -11,7 +11,7 @@ Show all tracked projects in the current Punch List with their state and status 
 
 Run:
 ```bash
-python punchlist.py config show --json
+python ~/.punch-list/punchlist.py config show --json
 ```
 
 If it exits non-zero or `state.json` does not exist, tell the user:
@@ -23,7 +23,7 @@ Then stop.
 
 Run:
 ```bash
-python punchlist.py project list --json
+python ~/.punch-list/punchlist.py project list --json
 ```
 
 Parse the JSON output. Key fields per project entry:
@@ -39,7 +39,7 @@ Top-level fields: `listName`, `currentProject`.
 
 ## Display the Board
 
-**Header**: When there are multiple punch lists (check via `python punchlist.py list show --json`), prefix with list name:
+**Header**: When there are multiple punch lists (check via `python ~/.punch-list/punchlist.py list show --json`), prefix with list name:
 ```
 Punch List: <listName> — <count> projects
 ```

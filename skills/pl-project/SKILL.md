@@ -68,9 +68,25 @@ If `githubRepo` is not set, skip this step and note it in the display.
   Config:    ~/.punch-list/projects/<slug>/config.json
 ```
 
+### Next Step
+
+Display the `nextStep` field after the core card, under its own heading:
+
+```
+Next Step:
+  <nextStep text>
+```
+
+If `nextStep` is null or empty, display:
+
+```
+Next Step:
+  (none — use the update option below to set a next action or priority marker)
+```
+
 ### Update Notes
 
-Display the `updateNotes` field prominently after the core card, under its own heading:
+Display the `updateNotes` field prominently after Next Step, under its own heading:
 
 ```
 Update Notes:
@@ -110,25 +126,31 @@ Open Issues:
   No GitHub repo configured for this project.
 ```
 
-## Offer to Update Notes
+## Offer to Update
 
 After displaying the full card, always ask:
 
-> Would you like to update the notes for **<name>**?
-> - **Yes** — write new notes
+> Would you like to update **<name>**?
+> - **1** — update Next Step
+> - **2** — update Notes
+> - **3** — update both
 > - **No** — done
 
-If the user chooses **Yes**, ask:
+If the user chooses **1** or **3**, ask:
+
+> Enter the next step (priority marker, action, or freeform text):
+
+Accept their free-form text and set `nextStep` to it.
+
+If the user chooses **2** or **3**, ask:
 
 > Enter your update notes (what you just did, what's coming up next):
 
-Accept their free-form text. Then update `~/.punch-list/projects/<slug>/config.json`:
-- Set `updateNotes` to the entered text
-- Set `updatedAt` to today's date (YYYY-MM-DD)
+Accept their free-form text and set `updateNotes` to it.
 
-Write the updated config back using the Write tool. Confirm with:
+For any update, also set `updatedAt` to today's date (YYYY-MM-DD). Write the updated config back using the Write tool. Confirm with:
 
-> Notes saved for **<name>**.
+> Updated **<name>**.
 
 If the user chooses **No**, simply end.
 

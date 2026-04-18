@@ -31,7 +31,7 @@ Then stop.
 
 ### 2. Load each project's config
 
-The registry contains `slug`, `name`, `state`, and `description` for fast listing. For the **GitHub** and **Local** columns, you must also read each project's config.
+The registry contains `slug`, `name`, `state`, and `description` for fast listing. For the **GitHub**, **Local**, and **Next Step** columns, you must also read each project's config.
 
 For each entry in `projects`, read `~/.punch-list/projects/<slug>/config.json`.
 
@@ -49,6 +49,7 @@ Format output as a table:
 Punch List — <count> projects
 
   <Name padded>             [<state>] <label padded>    GitHub  Local
+    → <nextStep>
   <Name padded>             [<state>] <label padded>    GitHub  Local
 ```
 
@@ -62,6 +63,7 @@ Punch List — <count> projects
   - `githubRepo` is set and `githubVisibility` is `"private"` → `🔒`
   - `githubRepo` is set and `githubVisibility` is null → `yes`
 - **Local**: Show `yes` if `localDirectory` is set in the config, otherwise `no`
+- **Next Step**: If `nextStep` is set (non-null) in the config, show it on a second indented line directly below the project row, prefixed with `→ `. If `nextStep` is null or not set, show nothing (no extra line).
 
 ### 4. Group by state (optional enhancement)
 
@@ -72,6 +74,7 @@ Punch List — 6 projects                          GitHub    Local
 
 [A] Ideation
   My Cool Project                                 🌐         yes
+    → ** Design the data model first
   Another Idea                                    no         no
 
 [B] Defining
@@ -79,6 +82,7 @@ Punch List — 6 projects                          GitHub    Local
 
 [D] Delivering
   Production Widget                               🔒         yes
+    → 1 Ship the auth PR
   API Revamp                                      yes        yes
   Docs Refresh                                    no         yes
 ```

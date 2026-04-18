@@ -7,13 +7,37 @@ description: "Use when the user wants to create a GitHub issue under a Punch Lis
 
 Creates a GitHub issue on the repo associated with a Punch List project.
 
-## Gate Check
+## Gate Check & Migration
 
-Read `~/.punch-list/registry.json`. If it does not exist, tell the user:
+Read `~/.punch-list/state.json`.
 
-> Punch List is not initialized yet. Run `/pl-init` first.
+**If it exists**: parse it, set `currentList` from the `currentList` field. All paths resolve under `~/.punch-list/lists/<currentList>/`. Proceed.
 
-Then stop.
+**If it does not exist**: check for old single-list layout by reading `~/.punch-list/registry.json`.
+
+- **Old layout found**: perform one-time migration:
+  1. Run:
+     ```bash
+     mkdir -p ~/.punch-list/lists/default
+     cp ~/.punch-list/registry.json ~/.punch-list/lists/default/registry.json
+     cp -r ~/.punch-list/projects ~/.punch-list/lists/default/projects
+     ```
+  2. Write `~/.punch-list/state.json`:
+     ```json
+     {
+       "version": "1.0",
+       "currentList": "default",
+       "lists": [{ "slug": "default", "name": null, "createdAt": "<today YYYY-MM-DD>" }]
+     }
+     ```
+  3. Inform the user:
+     > Migrated Punch List to multi-list layout. Your existing projects are in the **default** list. Use `/pl-lists` to rename it or add more lists.
+  4. Set `currentList` = `"default"` and continue.
+
+- **Neither exists**: tell the user:
+  > Punch List is not initialized yet. Run `/pl-init` first.
+  
+  Then stop.
 
 ## Interactive Flow
 
@@ -21,7 +45,7 @@ Ask questions **one at a time** using AskUserQuestion.
 
 ### 1. Select PL Project
 
-Read `~/.punch-list/registry.json` and present the list of projects that have a `githubRepo` set in their config. Load each project's `~/.punch-list/projects/<slug>/config.json` to check.
+Read `~/.punch-list/lists/<currentList>/registry.json` and present the list of projects that have a `githubRepo` set in their config. Load each project's `~/.punch-list/lists/<currentList>/projects/<slug>/config.json` to check.
 
 If no projects have a GitHub repo, tell the user:
 

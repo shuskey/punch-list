@@ -7,13 +7,37 @@ description: "Use when the user wants to create a new project card, add a projec
 
 Interactive project card creation. Walk the user through each field, write the config, and update the registry.
 
-## Gate Check
+## Gate Check & Migration
 
-First, try to read `~/.punch-list/registry.json`. If it does not exist, tell the user:
+Read `~/.punch-list/state.json`.
 
-> Punch List is not initialized yet. Run `/pl-init` first.
+**If it exists**: parse it, set `currentList` from the `currentList` field. All paths resolve under `~/.punch-list/lists/<currentList>/`. Proceed.
 
-Then stop. Do not proceed.
+**If it does not exist**: check for old single-list layout by reading `~/.punch-list/registry.json`.
+
+- **Old layout found**: perform one-time migration:
+  1. Run:
+     ```bash
+     mkdir -p ~/.punch-list/lists/default
+     cp ~/.punch-list/registry.json ~/.punch-list/lists/default/registry.json
+     cp -r ~/.punch-list/projects ~/.punch-list/lists/default/projects
+     ```
+  2. Write `~/.punch-list/state.json`:
+     ```json
+     {
+       "version": "1.0",
+       "currentList": "default",
+       "lists": [{ "slug": "default", "name": null, "createdAt": "<today YYYY-MM-DD>" }]
+     }
+     ```
+  3. Inform the user:
+     > Migrated Punch List to multi-list layout. Your existing projects are in the **default** list. Use `/pl-lists` to rename it or add more lists.
+  4. Set `currentList` = `"default"` and continue.
+
+- **Neither exists**: tell the user:
+  > Punch List is not initialized yet. Run `/pl-init` first.
+  
+  Then stop.
 
 ## Interactive Flow
 
@@ -28,7 +52,7 @@ From the name, generate a slug: lowercase, replace spaces/special chars with hyp
 - "My Cool Project" → `my-cool-project`
 - "AI-Powered Widget 2.0!" → `ai-powered-widget-20`
 
-Check the slug against the `projects` array in `~/.punch-list/registry.json`. If a project with that slug already exists, append `-2` (or `-3`, etc.) and inform the user of the adjusted slug.
+Check the slug against the `projects` array in `~/.punch-list/lists/<currentList>/registry.json`. If a project with that slug already exists, append `-2` (or `-3`, etc.) and inform the user of the adjusted slug.
 
 ### 2. Creative Description
 
@@ -88,13 +112,11 @@ Accept A through G (case-insensitive). Default to A if they just press Enter.
 
 ### Create config.json
 
-Create the directory and config file:
-
 ```bash
-mkdir -p ~/.punch-list/projects/<slug>
+mkdir -p ~/.punch-list/lists/<currentList>/projects/<slug>
 ```
 
-Use the Write tool to create `~/.punch-list/projects/<slug>/config.json`:
+Use the Write tool to create `~/.punch-list/lists/<currentList>/projects/<slug>/config.json`:
 
 ```json
 {
@@ -116,7 +138,7 @@ Use `null` (not `"null"`) for any fields that were skipped.
 
 ### Update registry.json
 
-The registry is a lightweight index only — no operational fields. Read the current `~/.punch-list/registry.json`, parse the JSON, append this entry to the `projects` array:
+Read the current `~/.punch-list/lists/<currentList>/registry.json`, parse the JSON, append this entry to the `projects` array:
 
 ```json
 {
@@ -144,12 +166,10 @@ Project created!
   SubDir:      <subfolder or "—">
   Local Dir:   <path or "—">
   Notes:       (none yet — use /pl-project <slug> to add update notes)
-  Config:      ~/.punch-list/projects/<slug>/config.json
+  Config:      ~/.punch-list/lists/<currentList>/projects/<slug>/config.json
 ```
 
 ## State Labels Reference
-
-Use these labels when displaying states:
 
 | State | Label |
 |-------|-------|

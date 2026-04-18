@@ -7,19 +7,43 @@ description: "Use when the user wants to view details of a specific Punch List p
 
 Display the full detail card for a single tracked project, including open GitHub issues.
 
-## Gate Check
+## Gate Check & Migration
 
-Read `~/.punch-list/registry.json`. If it does not exist, tell the user:
+Read `~/.punch-list/state.json`.
 
-> Punch List is not initialized yet. Run `/pl-init` first.
+**If it exists**: parse it, set `currentList` from the `currentList` field. All paths resolve under `~/.punch-list/lists/<currentList>/`. Proceed.
 
-Then stop.
+**If it does not exist**: check for old single-list layout by reading `~/.punch-list/registry.json`.
+
+- **Old layout found**: perform one-time migration:
+  1. Run:
+     ```bash
+     mkdir -p ~/.punch-list/lists/default
+     cp ~/.punch-list/registry.json ~/.punch-list/lists/default/registry.json
+     cp -r ~/.punch-list/projects ~/.punch-list/lists/default/projects
+     ```
+  2. Write `~/.punch-list/state.json`:
+     ```json
+     {
+       "version": "1.0",
+       "currentList": "default",
+       "lists": [{ "slug": "default", "name": null, "createdAt": "<today YYYY-MM-DD>" }]
+     }
+     ```
+  3. Inform the user:
+     > Migrated Punch List to multi-list layout. Your existing projects are in the **default** list. Use `/pl-lists` to rename it or add more lists.
+  4. Set `currentList` = `"default"` and continue.
+
+- **Neither exists**: tell the user:
+  > Punch List is not initialized yet. Run `/pl-init` first.
+  
+  Then stop.
 
 ## Resolve the Project
 
 The user provides a project name or slug as the argument (e.g., `/pl-project punch-list` or `/pl-project My Cool Project`).
 
-Search the `projects` array in the registry for a match:
+Search the `projects` array in `~/.punch-list/lists/<currentList>/registry.json` for a match:
 - Compare the argument against each project's `slug` (exact, case-insensitive)
 - Also compare against each project's `name` (case-insensitive, partial match acceptable)
 
@@ -35,12 +59,12 @@ Then stop.
 
 ## Load Config
 
-Read `~/.punch-list/projects/<slug>/config.json`.
+Read `~/.punch-list/lists/<currentList>/projects/<slug>/config.json`.
 
 If the file is missing or invalid JSON, display:
 
 > Project "<name>" found in registry but config is missing or corrupt.
-> Expected: `~/.punch-list/projects/<slug>/config.json`
+> Expected: `~/.punch-list/lists/<currentList>/projects/<slug>/config.json`
 
 Then stop.
 
@@ -65,7 +89,7 @@ If `githubRepo` is not set, skip this step and note it in the display.
   GitHub:    <githubRepo or "—">
   SubDir:    <subDirectory or "—">
   Local Dir: <localDirectory or "—">
-  Config:    ~/.punch-list/projects/<slug>/config.json
+  Config:    ~/.punch-list/lists/<currentList>/projects/<slug>/config.json
 ```
 
 ### Next Step

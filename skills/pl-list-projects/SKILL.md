@@ -43,7 +43,7 @@ Read `~/.punch-list/state.json`.
 
 ### 1. Read the registry
 
-Read `~/.punch-list/lists/<currentList>/registry.json` and parse the `projects` array.
+Read `~/.punch-list/lists/<currentList>/registry.json` and parse the `projects` array and `currentProject` field.
 
 If the array is empty, display:
 
@@ -53,15 +53,19 @@ If the array is empty, display:
 
 Then stop.
 
-### 2. Load each project's config
+**Resolve current project**: If `currentProject` is set in the registry, use that slug. If not set or the slug doesn't match any project, default to the first project in the array. Do not write back to the registry at display time — only update `currentProject` when the user explicitly changes it (e.g., via `/pl-project`).
+
+### 2. Load each project's config and checklists
 
 For each entry in `projects`, read `~/.punch-list/lists/<currentList>/projects/<slug>/config.json`.
 
 If a config file is missing or contains invalid JSON, show that project with a warning indicator:
 
 ```text
-  <name>                   [?] Config missing     no   no
+  <name>                   [?] Config missing            no   no
 ```
+
+Also attempt to read `~/.punch-list/lists/<currentList>/projects/<slug>/checklists.json`. If it exists, count the total number of items across all lists (items arrays). If the file is missing or all lists are empty, the checklist count is 0.
 
 ### 3. Display the board
 
@@ -82,15 +86,16 @@ Format output as a table:
 ```text
 Punch List — <count> projects
 
-  <Name padded>             [<state>] <label padded>    GitHub  Local
+  <Name padded>             [<state>] <label padded>    Checklists  GitHub  Local
     → <nextStep>
-  <Name padded>             [<state>] <label padded>    GitHub  Local
+  <Name padded>             [<state>] <label padded>    Checklists  GitHub  Local
 ```
 
 **Column details**:
 
-- **Name**: Project name, left-aligned (from registry)
+- **Name**: Project name, left-aligned (from registry). Prefix with `👉 ` if this is the current project (slug matches `currentProject`).
 - **State**: `[A]` through `[G]` with label — read from the registry entry (Ideation, Defining, Proving, Delivering, Evolving, Sustaining, Sunsetting)
+- **Checklists**: Show `N checklist` / `N checklists` (counting lists with at least 1 item) only if N > 0. If zero, leave the column blank.
 - **GitHub**: Determined by `githubRepo` and `githubVisibility` fields in the config:
   - `githubRepo` is null or not set → `no`
   - `githubRepo` is set and `githubVisibility` is `"public"` → `🌐`
@@ -101,24 +106,24 @@ Punch List — <count> projects
 
 ### 4. Group by state (optional enhancement)
 
-If there are 5 or more projects, group them by state with headers. Always show a column header line at the top right-aligned over the last two columns:
+If there are 5 or more projects, group them by state with headers. Always show a column header line at the top right-aligned over the last three columns:
 
 ```
-Punch List: Hobby & Photo Room — 6 projects          GitHub    Local
+Punch List: Hobby & Photo Room — 6 projects     Checklists  GitHub    Local
 
 [A] Ideation
-  My Cool Project                                      🌐         yes
+👉 My Cool Project                               1 checklist  🌐         yes
     → ** Design the data model first
-  Another Idea                                         no         no
+  Another Idea                                               no         no
 
 [B] Defining
-  Secret Sauce                                         yes        no
+  Secret Sauce                                               yes        no
 
 [D] Delivering
-  Production Widget                                    🔒         yes
+  Production Widget                               2 checklists 🔒         yes
     → 1 Ship the auth PR
-  API Revamp                                           yes        yes
-  Docs Refresh                                         no         yes
+  API Revamp                                                 yes        yes
+  Docs Refresh                                               no         yes
 ```
 
 For fewer than 5 projects, use the flat list format with the same column header line.

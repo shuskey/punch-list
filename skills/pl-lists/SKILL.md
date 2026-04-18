@@ -21,13 +21,13 @@ Parse `state.json`. Extract `currentList` and `lists` array.
 
 Before any action, read project counts and display all lists. For each entry in `state.lists`, read `~/.punch-list/lists/<slug>/registry.json` and count the `projects` array. If a registry is missing, show `?`.
 
-Display with `→` pointing to the current list:
+Display with 👉 pointing to the current list. Do **not** show the slug:
 
 ```
 Punch Lists — <count> lists
 
-→ <name or "(unnamed)">   (<slug>)    <N> projects    ← current
-  <name or "(unnamed)">   (<slug>)    <N> projects
+👉 <name or "(unnamed)">   (<N> projects)    ← current
+   <name or "(unnamed)">   (<N> projects)
 ```
 
 ## Dispatch
@@ -64,12 +64,16 @@ If there is only one list, tell the user:
 
 Then stop.
 
+Before presenting the picker, read each list's `~/.punch-list/lists/<slug>/registry.json` and count the `projects` array (show `?` if missing).
+
 Present all entries in `state.lists` using AskUserQuestion (arrow-key style), with the current list pre-selected:
 
 > Select a Punch List to make active:
-> - <name or "(unnamed — <slug>)"> ← current
-> - <name or "(unnamed — <slug>)">
+> - 👉 <name or "(unnamed)"> (<N> projects)   ← current
+> - <name or "(unnamed)"> (<N> projects)
 > ...
+
+Do **not** show the slug. Use 👉 only on the currently active list.
 
 On selection:
 1. Update `currentList` to the chosen slug in `state.json`.

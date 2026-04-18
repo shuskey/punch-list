@@ -57,6 +57,10 @@ If no match is found, display:
 
 Then stop.
 
+## Set Current Project
+
+After resolving the project slug, read `~/.punch-list/lists/<currentList>/registry.json`. If `currentProject` does not already equal this slug, update it and write the registry back. This makes the viewed project the current project for the list.
+
 ## Load Config
 
 Read `~/.punch-list/lists/<currentList>/projects/<slug>/config.json`.
@@ -124,6 +128,21 @@ Update Notes:
   (none — use option below to add notes about where you left off and what's next)
 ```
 
+### Checklists
+
+After Update Notes, check for `~/.punch-list/lists/<currentList>/projects/<slug>/checklists.json`.
+
+If the file exists and has at least one list with items, display each list that has items. Resolve the current checklist: use `currentList` from `checklists.json` if set and valid, otherwise default to the first list with items. Prefix the current checklist with `👉 `.
+
+```
+Checklists:
+👉 <list name>      <N> items (<M> done)   ← current
+   <list name>      <N> items
+  (use /pl-checklist <slug> to manage)
+```
+
+Only show lists that have at least one item. If all lists are empty or the file doesn't exist, show nothing (no heading, no placeholder text).
+
 ### Open Issues
 
 If `githubRepo` is set, display all open issues from the `gh issue list` output:
@@ -150,33 +169,6 @@ Open Issues:
   No GitHub repo configured for this project.
 ```
 
-## Offer to Update
-
-After displaying the full card, always ask:
-
-> Would you like to update **<name>**?
-> - **1** — update Next Step
-> - **2** — update Notes
-> - **3** — update both
-> - **No** — done
-
-If the user chooses **1** or **3**, ask:
-
-> Enter the next step (priority marker, action, or freeform text):
-
-Accept their free-form text and set `nextStep` to it.
-
-If the user chooses **2** or **3**, ask:
-
-> Enter your update notes (what you just did, what's coming up next):
-
-Accept their free-form text and set `updateNotes` to it.
-
-For any update, also set `updatedAt` to today's date (YYYY-MM-DD). Write the updated config back using the Write tool. Confirm with:
-
-> Updated **<name>**.
-
-If the user chooses **No**, simply end.
 
 ## State Labels Reference
 

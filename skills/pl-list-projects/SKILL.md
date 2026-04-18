@@ -5,21 +5,45 @@ description: "Use when the user wants to list projects, see their Punch List boa
 
 # PL List Projects — Display the Project Registry
 
-Show all tracked projects with their state and status indicators.
+Show all tracked projects in the current Punch List with their state and status indicators.
 
-## Gate Check
+## Gate Check & Migration
 
-First, try to read `~/.punch-list/registry.json`. If it does not exist, tell the user:
+Read `~/.punch-list/state.json`.
 
-> Punch List is not initialized yet. Run `/pl-init` first.
+**If it exists**: parse it, set `currentList` from the `currentList` field. All paths resolve under `~/.punch-list/lists/<currentList>/`. Proceed.
 
-Then stop.
+**If it does not exist**: check for old single-list layout by reading `~/.punch-list/registry.json`.
+
+- **Old layout found**: perform one-time migration:
+  1. Run:
+     ```bash
+     mkdir -p ~/.punch-list/lists/default
+     cp ~/.punch-list/registry.json ~/.punch-list/lists/default/registry.json
+     cp -r ~/.punch-list/projects ~/.punch-list/lists/default/projects
+     ```
+  2. Write `~/.punch-list/state.json`:
+     ```json
+     {
+       "version": "1.0",
+       "currentList": "default",
+       "lists": [{ "slug": "default", "name": null, "createdAt": "<today YYYY-MM-DD>" }]
+     }
+     ```
+  3. Inform the user:
+     > Migrated Punch List to multi-list layout. Your existing projects are in the **default** list. Use `/pl-lists` to rename it or add more lists.
+  4. Set `currentList` = `"default"` and continue.
+
+- **Neither exists**: tell the user:
+  > Punch List is not initialized yet. Run `/pl-init` first.
+  
+  Then stop.
 
 ## Behavior
 
 ### 1. Read the registry
 
-Read `~/.punch-list/registry.json` and parse the `projects` array.
+Read `~/.punch-list/lists/<currentList>/registry.json` and parse the `projects` array.
 
 If the array is empty, display:
 
@@ -31,17 +55,27 @@ Then stop.
 
 ### 2. Load each project's config
 
-The registry contains `slug`, `name`, `state`, and `description` for fast listing. For the **GitHub**, **Local**, and **Next Step** columns, you must also read each project's config.
+For each entry in `projects`, read `~/.punch-list/lists/<currentList>/projects/<slug>/config.json`.
 
-For each entry in `projects`, read `~/.punch-list/projects/<slug>/config.json`.
-
-If a config file is missing or contains invalid JSON, show that project with a warning indicator instead of skipping it, using `state` from the registry entry:
+If a config file is missing or contains invalid JSON, show that project with a warning indicator:
 
 ```text
   <name>                   [?] Config missing     no   no
 ```
 
 ### 3. Display the board
+
+**Header**: When `state.lists.length > 1`, prefix the header with the current list name:
+
+```text
+Punch List: <listName> — <count> projects
+```
+
+When there is only one list:
+
+```text
+Punch List — <count> projects
+```
 
 Format output as a table:
 
@@ -70,21 +104,21 @@ Punch List — <count> projects
 If there are 5 or more projects, group them by state with headers. Always show a column header line at the top right-aligned over the last two columns:
 
 ```
-Punch List — 6 projects                          GitHub    Local
+Punch List: Hobby & Photo Room — 6 projects          GitHub    Local
 
 [A] Ideation
-  My Cool Project                                 🌐         yes
+  My Cool Project                                      🌐         yes
     → ** Design the data model first
-  Another Idea                                    no         no
+  Another Idea                                         no         no
 
 [B] Defining
-  Secret Sauce                                    yes        no
+  Secret Sauce                                         yes        no
 
 [D] Delivering
-  Production Widget                               🔒         yes
+  Production Widget                                    🔒         yes
     → 1 Ship the auth PR
-  API Revamp                                      yes        yes
-  Docs Refresh                                    no         yes
+  API Revamp                                           yes        yes
+  Docs Refresh                                         no         yes
 ```
 
 For fewer than 5 projects, use the flat list format with the same column header line.

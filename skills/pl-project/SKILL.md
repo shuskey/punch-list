@@ -124,6 +124,21 @@ Update Notes:
   (none — use option below to add notes about where you left off and what's next)
 ```
 
+### Checklists
+
+After Update Notes, check for `~/.punch-list/lists/<currentList>/projects/<slug>/checklists.json`.
+
+If the file exists and has at least one list with items, display:
+
+```
+Checklists:
+  <list name>      <N> items (<M> done)
+  <list name>      <N> items
+  (use /pl-checklist <slug> to manage)
+```
+
+Only show lists that have at least one item. If all lists are empty or the file doesn't exist, show nothing (no heading, no placeholder text).
+
 ### Open Issues
 
 If `githubRepo` is set, display all open issues from the `gh issue list` output:

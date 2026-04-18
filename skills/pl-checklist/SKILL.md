@@ -5,92 +5,56 @@ description: "Use when the user wants to view or manage checklists for a Punch L
 
 # PL Checklist — Manage Project Checklists
 
-Interactive checklist manager for a Punch List project. Checklists are stored as local JSON files and only shown when they have items.
-
-## Gate Check & Migration
-
-Read `~/.punch-list/state.json`.
-
-**If it exists**: parse it, set `currentList` from the `currentList` field. All paths resolve under `~/.punch-list/lists/<currentList>/`. Proceed.
-
-**If it does not exist**: tell the user:
-> Punch List is not initialized yet. Run `/pl-init` first.
-
-Then stop.
-
-## Data File
-
-Checklists for a project live at:
-```
-~/.punch-list/lists/<currentList>/projects/<slug>/checklists.json
-```
-
-Schema:
-```json
-{
-  "version": "1.0",
-  "currentList": "<list-id or null>",
-  "lists": [
-    {
-      "id": "<short-uuid>",
-      "name": "My List",
-      "createdAt": "YYYY-MM-DD",
-      "items": [
-        {
-          "id": "<short-uuid>",
-          "text": "Item text",
-          "quantity": null,
-          "completed": false,
-          "order": 0
-        }
-      ]
-    }
-  ]
-}
-```
-
-- `id`: 8-character hex string generated via `date +%s%N | md5sum | head -c 8` or similar
-- `quantity`: optional string (e.g., `"2 lbs"`, `"3"`) — null if not set
-- `order`: integer starting at 0, controls display order within the list
-
-If `checklists.json` does not exist, treat it as `{ "version": "1.0", "currentList": null, "lists": [] }`.
-
-**Resolve current checklist**: Use `currentList` (an id) to identify the active list. If not set or the id doesn't match any list, default to the first list that has items. If no lists have items, no current checklist.
+Interactive checklist manager for a Punch List project.
 
 ## Resolve the Project
 
-If the skill was invoked with an argument (slug or name), resolve it against `~/.punch-list/lists/<currentList>/registry.json`. Match by slug (exact) or name (case-insensitive, partial).
+If invoked with a slug or name argument, resolve it:
+```bash
+python ~/.punch-list/punchlist.py project list --json
+```
+Match against `slug` (exact) or `name` (case-insensitive, partial). If no match, show available projects and stop.
 
-If no argument, ask:
-> Which project? (type slug or name)
+If no argument, the CLI defaults to the current project automatically — pass no `--project-slug`.
 
-If no match found, show available projects and stop.
+Set `PROJECT_SLUG` to the resolved slug (or omit from CLI calls to use the default).
+
+## Load Checklist Data
+
+```bash
+python ~/.punch-list/punchlist.py checklist lists --project-slug <slug> --json
+```
+
+Returns `{ projectSlug, currentList, lists: [{ id, name, totalItems, completedItems, isCurrent }] }`.
 
 ## Main Menu
 
-Display all checklists for the project. If none exist, skip to **New List** flow.
+If no lists exist (empty `lists` array), skip to **New List** flow.
 
-Prefix the current checklist entry with `👉 ` (using the resolved current checklist). All others are indented with spaces to align.
+Display all lists. Prefix current list (`isCurrent`) with `👉 `:
 
 ```
 Checklists — <project name>
 
-👉 [1] Costco Run  (3 items, 1 done)     ← current
-      □ Milk  ×2 gallons
-      □ Eggs
-      ✓ Bread  (done)
+👉 [1] Home Remodel Tasks  (2 items)     ← current
+       □ Bottom Out on Button. Budget.
+       □ Engage with Mountain Home Remodelers
 
-   [2] Weekend Tasks  (2 items)
-      □ Mow lawn
-      □ Fix fence
+   [2] Stuff We Can Do Ourselves  (1 item)
+       □ Update Master Bathroom Shower
 
 ──────────────────────────────
   [N] New list
   [Q] Quit
 ```
 
-Display format per item:
-- Incomplete: `□ <text>  ×<quantity>` (quantity omitted if null)
+To show items, run:
+```bash
+python ~/.punch-list/punchlist.py checklist show <list-id> --project-slug <slug> --json
+```
+
+Items format:
+- Incomplete: `□ <text>  ×<quantity>`
 - Complete: `✓ <text>  (done)`
 
 Ask:
@@ -98,16 +62,17 @@ Ask:
 
 ## Manage a List
 
-When the user selects a list, update `currentList` in `checklists.json` to that list's `id` and write the file before showing the manage view. This makes it the current checklist.
+Set this list as current:
+```bash
+python ~/.punch-list/punchlist.py checklist set-current <list-id> --project-slug <slug>
+```
 
 Show:
-
 ```
 <list name> — <count> items
 
-  [1] □ Milk  ×2 gallons
-  [2] □ Eggs
-  [3] ✓ Bread  (done)
+  [1] □ <text>
+  [2] ✓ <text>  (done)
 
 ──────────────────────────────
   [A] Add item
@@ -121,73 +86,79 @@ Show:
 Ask:
 > Action? (item number to toggle/delete, or a letter)
 
-### Toggle Complete
+### Toggle / Delete Item
 
-If the user enters an item number, ask:
+If user enters an item number, ask:
 > [1] Mark complete  [2] Delete item  [3] Cancel
 
-- **Mark complete**: set `completed: true`. If already complete, set `completed: false` (toggle).
-- **Delete item**: remove the item from the array, renumber `order` values.
+**Mark complete** (toggle):
+```bash
+python ~/.punch-list/punchlist.py checklist toggle <item-id> --project-slug <slug>
+```
+
+**Delete item**:
+```bash
+python ~/.punch-list/punchlist.py checklist delete-item <item-id> --project-slug <slug>
+```
 
 ### Add Item
 
-Ask (one at a time):
-> Item text?
+Ask: `Item text?`  
+Ask: `Quantity? (e.g., "2 lbs", "3") — or press Enter to skip.`
 
-Then:
-> Quantity? (e.g., "2 lbs", "3") — or press Enter to skip.
-
-Append to items array with `completed: false` and `order` = current max + 1.
+```bash
+python ~/.punch-list/punchlist.py checklist add "<text>" [--quantity "<qty>"] --project-slug <slug> --list-id <list-id>
+```
 
 ### Clear All Completed
 
-Remove all items where `completed: true`. Confirm first:
+Get completed items from:
+```bash
+python ~/.punch-list/punchlist.py checklist show <list-id> --project-slug <slug> --json
+```
+
+Count items where `completed: true`. Confirm:
 > Clear <N> completed items? [Y/N]
+
+If confirmed, call for each completed item:
+```bash
+python ~/.punch-list/punchlist.py checklist delete-item <item-id> --project-slug <slug>
+```
 
 ### Reorder
 
-Ask:
-> Which item number to move?
+Ask: `Which item number to move?`  
+Ask: `[U] Move up  [D] Move down`
 
-Then:
-> [U] Move up  [D] Move down
+Convert to 1-based new position (up = current position - 1, down = current position + 1).
 
-Swap `order` values with the adjacent item. Re-display the list.
+```bash
+python ~/.punch-list/punchlist.py checklist reorder <item-id> <new-position> --list-id <list-id> --project-slug <slug>
+```
 
 ### Rename List
 
-Ask:
-> New name for this list?
+Ask: `New name for this list?`
 
-Update `name` field.
+```bash
+python ~/.punch-list/punchlist.py checklist rename-list <list-id> "<new-name>" --project-slug <slug>
+```
 
 ### Delete List
 
-Ask:
-> Delete "<name>" and all its items? [Y/N]
+Ask: `Delete "<name>" and all its items? [Y/N]`
 
-If confirmed, remove the list from the array.
+If confirmed:
+```bash
+python ~/.punch-list/punchlist.py checklist delete-list <list-id> --force --project-slug <slug>
+```
 
 ## New List Flow
 
-Ask:
-> Name for the new list? (e.g., "Costco Run", "Weekend Tasks")
+Ask: `Name for the new list?`
 
-Create a new list entry with a generated `id`, today's date, and empty `items` array. Set `currentList` to the new list's `id`. Then immediately enter **Manage a List** for it.
-
-## Saving
-
-After every mutating operation, write the full updated `checklists.json` back using the Write tool. Create the file if it doesn't exist.
-
-## Display from pl-project
-
-When `pl-project` loads a project, it should check for `checklists.json`. If it exists and has any list with items, show:
-
-```
-Checklists:
-  Costco Run      3 items (1 done)
-  Weekend Tasks   2 items
-  (use /pl-checklist <slug> to manage)
+```bash
+python ~/.punch-list/punchlist.py checklist create-list "<name>" --set-current --project-slug <slug>
 ```
 
-If `checklists.json` is missing or all lists are empty, show nothing.
+Then immediately enter **Manage a List** for the new list (re-fetch data first).

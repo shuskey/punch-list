@@ -29,6 +29,7 @@ Schema:
 ```json
 {
   "version": "1.0",
+  "currentList": "<list-id or null>",
   "lists": [
     {
       "id": "<short-uuid>",
@@ -52,7 +53,9 @@ Schema:
 - `quantity`: optional string (e.g., `"2 lbs"`, `"3"`) — null if not set
 - `order`: integer starting at 0, controls display order within the list
 
-If `checklists.json` does not exist, treat it as `{ "version": "1.0", "lists": [] }`.
+If `checklists.json` does not exist, treat it as `{ "version": "1.0", "currentList": null, "lists": [] }`.
+
+**Resolve current checklist**: Use `currentList` (an id) to identify the active list. If not set or the id doesn't match any list, default to the first list that has items. If no lists have items, no current checklist.
 
 ## Resolve the Project
 
@@ -67,15 +70,17 @@ If no match found, show available projects and stop.
 
 Display all checklists for the project. If none exist, skip to **New List** flow.
 
+Prefix the current checklist entry with `👉 ` (using the resolved current checklist). All others are indented with spaces to align.
+
 ```
 Checklists — <project name>
 
-  [1] Costco Run  (3 items, 1 done)
+👉 [1] Costco Run  (3 items, 1 done)     ← current
       □ Milk  ×2 gallons
       □ Eggs
       ✓ Bread  (done)
 
-  [2] Weekend Tasks  (2 items)
+   [2] Weekend Tasks  (2 items)
       □ Mow lawn
       □ Fix fence
 
@@ -93,7 +98,9 @@ Ask:
 
 ## Manage a List
 
-When the user selects a list, show:
+When the user selects a list, update `currentList` in `checklists.json` to that list's `id` and write the file before showing the manage view. This makes it the current checklist.
+
+Show:
 
 ```
 <list name> — <count> items
@@ -166,7 +173,7 @@ If confirmed, remove the list from the array.
 Ask:
 > Name for the new list? (e.g., "Costco Run", "Weekend Tasks")
 
-Create a new list entry with a generated `id`, today's date, and empty `items` array. Then immediately enter **Manage a List** for it.
+Create a new list entry with a generated `id`, today's date, and empty `items` array. Set `currentList` to the new list's `id`. Then immediately enter **Manage a List** for it.
 
 ## Saving
 

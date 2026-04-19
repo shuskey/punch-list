@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Punch List</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@600;700&family=DM+Sans:wght@400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 15px;
+  background: #F7F3EC;
+  color: #1A1A1A;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #DDD5C4; border-radius: 3px; }
+
+a { color: inherit; text-decoration: none; }
+
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: #FEFCF8;
+  border-bottom: 1px solid #DDD5C4;
+  padding: 0 24px;
+  height: 52px;
+  display: flex; align-items: center; gap: 16px;
+}
+
+.topbar-title {
+  font-family: 'Bebas Neue', 'Barlow Condensed', sans-serif;
+  font-size: 26px;
+  letter-spacing: 0.04em;
+  color: #1A1A1A;
+  line-height: 1;
+}
+
+.topbar-list-select {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  color: #6B6452;
+  letter-spacing: 0.03em;
+  background: transparent;
+  border: 1px solid #DDD5C4;
+  border-radius: 14px;
+  padding: 3px 28px 3px 12px;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23C9950A' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  transition: border-color 120ms, background-color 120ms;
+  max-width: 280px;
+}
+.topbar-list-select:hover { border-color: #C4BAA8; background-color: #F2EDE4; }
+.topbar-list-select:focus { border-color: #F5C518; box-shadow: 0 0 0 2px rgba(245,197,24,0.2); }
+
+.topbar-spacer { flex: 1; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background 120ms, opacity 120ms;
+}
+.btn:disabled { opacity: 0.5; cursor: default; }
+
+.btn-primary {
+  background: #F5C518; color: #1A1A1A;
+}
+.btn-primary:hover:not(:disabled) { background: #e8b810; }
+
+.btn-secondary {
+  background: #FEFCF8; color: #1A1A1A;
+  border: 1px solid #DDD5C4;
+}
+.btn-secondary:hover:not(:disabled) { background: #F2EDE4; }
+
+.btn-ghost {
+  background: transparent; color: #6B6452;
+  border: 1px solid transparent;
+}
+.btn-ghost:hover:not(:disabled) { background: #F2EDE4; color: #1A1A1A; }
+
+.btn-danger {
+  background: #F5ECEA; color: #A05C52;
+  border: 1px solid #E8A090;
+}
+.btn-danger:hover:not(:disabled) { background: #EDDDDA; }
+
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+
+.main {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 28px 24px 60px;
+}
+
+/* Board */
+.state-section { margin-bottom: 28px; }
+
+.state-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 4px 8px;
+  border-bottom: 1px solid #DDD5C4;
+  margin-bottom: 4px;
+}
+
+.state-header-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: #6B6452;
+}
+
+.state-header-count {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px; color: #9C907E;
+}
+
+.col-headers {
+  display: flex; align-items: center;
+  padding: 4px 12px 4px 44px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; color: #9C907E;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+
+.board-row {
+  display: flex; align-items: center;
+  padding: 7px 12px; border-radius: 4px;
+  cursor: pointer; gap: 8px;
+  transition: background 100ms;
+}
+.board-row:hover { background: #F7F3E0; }
+.board-row.is-current { background: #FFFDF0; }
+
+.row-indicator { width: 20px; flex-shrink: 0; font-size: 13px; }
+.row-name { flex: 1; font-size: 14px; font-weight: 500; }
+.row-meta {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px; color: #9C907E; white-space: nowrap;
+}
+.row-cl { min-width: 80px; text-align: right; }
+.row-gh { min-width: 44px; text-align: right; }
+.row-loc { min-width: 36px; text-align: right; }
+
+.row-nextstep {
+  display: flex; gap: 6px;
+  padding: 1px 12px 5px 44px;
+  font-size: 12px; color: #6B6452;
+}
+.row-arrow { color: #C9950A; font-weight: 600; }
+
+/* Badge */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px; font-weight: 500;
+  letter-spacing: 0.05em; white-space: nowrap;
+  border: 1px solid;
+}
+
+/* Detail */
+.detail-back {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; color: #9C907E;
+  background: none; border: none; cursor: pointer;
+  padding: 0 0 12px 0; font-family: 'DM Sans', sans-serif;
+}
+.detail-back:hover { color: #1A1A1A; }
+
+.detail-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 30px; font-weight: 700;
+  line-height: 1.1; color: #1A1A1A;
+}
+
+.detail-slug {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px; color: #9C907E;
+  letter-spacing: 0.03em; margin-top: 3px;
+}
+
+.detail-desc {
+  font-size: 14px; color: #6B6452; line-height: 1.6;
+  margin-top: 10px;
+}
+
+.meta-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 8px; margin-top: 16px;
+}
+.meta-cell {
+  background: #F2EDE4; border-radius: 6px;
+  padding: 10px 12px;
+}
+.meta-cell-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; color: #9C907E;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.meta-cell-value {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px; color: #1A1A1A;
+  word-break: break-all;
+}
+.meta-cell-link {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px; color: #4A74C4;
+  word-break: break-all;
+  border-bottom: 1px solid #9AB8E0;
+}
+.launch-btns { display: flex; gap: 6px; margin-top: 8px; }
+
+.section-block {
+  background: #FEFCF8;
+  border: 1px solid #DDD5C4;
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-top: 12px;
+}
+.section-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; color: #9C907E;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+/* Inline editor */
+.inline-text { font-size: 13px; color: #1A1A1A; line-height: 1.6; }
+.inline-textarea {
+  width: 100%; min-height: 80px;
+  background: #F7F3EC; border: 1px solid #C4BAA8;
+  border-radius: 4px; padding: 8px;
+  font-family: 'DM Sans', sans-serif; font-size: 13px;
+  color: #1A1A1A; line-height: 1.6; resize: vertical;
+  outline: none;
+}
+.inline-textarea:focus { border-color: #F5C518; box-shadow: 0 0 0 2px rgba(245,197,24,0.2); }
+.inline-actions { display: flex; gap: 6px; margin-top: 6px; }
+
+/* Checklists */
+.cl-tabs {
+  display: flex; gap: 4px; align-items: center;
+  border-bottom: 1px solid #DDD5C4;
+  margin-bottom: 12px; padding-bottom: 0;
+}
+.cl-tab {
+  padding: 6px 12px; font-size: 12px; font-weight: 500;
+  background: none; border: none; cursor: pointer;
+  color: #6B6452; border-bottom: 2px solid transparent;
+  margin-bottom: -1px; font-family: 'DM Sans', sans-serif;
+  border-radius: 4px 4px 0 0;
+  transition: color 100ms, background 100ms;
+}
+.cl-tab:hover { background: #F2EDE4; color: #1A1A1A; }
+.cl-tab.active { color: #1A1A1A; border-bottom-color: #F5C518; background: #FFFDF0; }
+.cl-tab-add { color: #9C907E; font-size: 16px; padding: 4px 8px; }
+
+.cl-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 4px; border-radius: 4px;
+  transition: background 80ms;
+  border-top: 2px solid transparent;
+  cursor: pointer;
+}
+.cl-item:hover { background: #F7F3EC; }
+.cl-item:hover .cl-del { opacity: 1; }
+.cl-item.cl-selected { background: #FFFDF0; }
+.cl-item.cl-selected .cl-move-btns { display: flex; }
+.cl-item.cl-dragging { opacity: 0.35; }
+.cl-item.cl-drag-over { border-top-color: #F5C518; }
+
+.cl-drag-handle {
+  color: #C4BAA8; font-size: 11px; cursor: grab;
+  padding: 0 2px; user-select: none; letter-spacing: -1px;
+  flex-shrink: 0;
+}
+.cl-drag-handle:active { cursor: grabbing; }
+
+.cl-move-btns {
+  display: none; flex-direction: column; gap: 2px;
+  flex-shrink: 0;
+}
+.cl-move-btn {
+  background: #F2EDE4; border: 1px solid #DDD5C4;
+  border-radius: 2px; cursor: pointer; color: #6B6452;
+  font-size: 8px; padding: 1px 4px; line-height: 1.4;
+}
+.cl-move-btn:hover:not(:disabled) { background: #F5C518; color: #1A1A1A; border-color: #C9950A; }
+.cl-move-btn:disabled { opacity: 0.25; cursor: default; }
+
+.cl-check {
+  width: 16px; height: 16px; flex-shrink: 0;
+  border: 1.5px solid #C4BAA8; border-radius: 3px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  background: #FEFCF8; transition: border-color 100ms, background 100ms;
+}
+.cl-check.done { background: #F5C518; border-color: #C9950A; }
+.cl-check svg { display: none; }
+.cl-check.done svg { display: block; }
+
+.cl-text { flex: 1; font-size: 13px; line-height: 1.5; }
+.cl-text.done { color: #9C907E; text-decoration: line-through; }
+.cl-del {
+  opacity: 0; background: none; border: none;
+  cursor: pointer; color: #9C907E; padding: 2px 4px;
+  font-size: 14px; border-radius: 3px;
+  transition: opacity 100ms, color 100ms;
+}
+.cl-del:hover { color: #A05C52; }
+
+.cl-add-form {
+  display: flex; gap: 6px; margin-top: 10px;
+}
+.cl-add-input {
+  flex: 1; padding: 6px 10px;
+  background: #F7F3EC; border: 1px solid #DDD5C4;
+  border-radius: 4px; font-family: 'DM Sans', sans-serif;
+  font-size: 13px; color: #1A1A1A; outline: none;
+}
+.cl-add-input:focus { border-color: #F5C518; box-shadow: 0 0 0 2px rgba(245,197,24,0.2); }
+
+.cl-progress {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px; color: #9C907E;
+  margin-bottom: 8px;
+}
+
+/* Action bar */
+.action-bar {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  padding-top: 16px; margin-top: 16px;
+  border-top: 1px solid #DDD5C4;
+}
+
+/* Modal */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(26,26,26,0.4);
+  z-index: 200;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 60px 24px 24px;
+  overflow-y: auto;
+}
+.modal {
+  background: #FEFCF8;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  width: 100%; max-width: 540px;
+  padding: 28px;
+}
+.modal-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px; font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.form-row { margin-bottom: 14px; }
+.form-label {
+  display: block;
+  font-size: 12px; font-weight: 600;
+  color: #6B6452; margin-bottom: 4px;
+  letter-spacing: 0.02em;
+}
+.form-input, .form-select, .form-textarea {
+  width: 100%; padding: 8px 10px;
+  background: #F7F3EC; border: 1px solid #DDD5C4;
+  border-radius: 4px; font-family: 'DM Sans', sans-serif;
+  font-size: 13px; color: #1A1A1A; outline: none;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: #F5C518;
+  box-shadow: 0 0 0 2px rgba(245,197,24,0.2);
+}
+.form-textarea { min-height: 80px; resize: vertical; line-height: 1.6; }
+.form-hint { font-size: 11px; color: #9C907E; margin-top: 3px; }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+/* Utility */
+.spinner {
+  display: inline-block; width: 18px; height: 18px;
+  border: 2px solid #DDD5C4; border-top-color: #C9950A;
+  border-radius: 50%; animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.empty-state {
+  text-align: center; padding: 60px 24px;
+  color: #9C907E; font-size: 14px;
+}
+.empty-state-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px; color: #6B6452; margin-bottom: 8px;
+}
+
+.error-bar {
+  background: #F5ECEA; border: 1px solid #E8A090;
+  border-radius: 6px; padding: 10px 14px;
+  font-size: 13px; color: #A05C52; margin-bottom: 16px;
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ── Design tokens ─────────────────────────────────────────────────────────────
+
+const STATE_META = {
+  A: { label: 'Ideation',   mnemonic: 'Aspiring',      color: '#7B6BC4', bg: '#EEEAF8', border: '#C8C0EA' },
+  B: { label: 'Defining',   mnemonic: 'Building',      color: '#4A74C4', bg: '#E0EAF5', border: '#9AB8E0' },
+  C: { label: 'Proving',    mnemonic: 'Crystallizing', color: '#3A9E5C', bg: '#D8F0E2', border: '#85CCA0' },
+  D: { label: 'Delivering', mnemonic: 'Dispatching',   color: '#C97A0A', bg: '#FDF0D8', border: '#F5C060' },
+  E: { label: 'Evolving',   mnemonic: 'Elevating',     color: '#2A8A7A', bg: '#D5EEE8', border: '#7AC8B8' },
+  F: { label: 'Sustaining', mnemonic: 'Fortifying',    color: '#6B6B68', bg: '#E8E8E4', border: '#B8B8B2' },
+  G: { label: 'Sunsetting', mnemonic: 'Graduating',    color: '#CC5040', bg: '#FCE0DA', border: '#E8A090' },
+};
+const STATES_ORDER = ['A','B','C','D','E','F','G'];
+
+function nextState(s) {
+  const i = STATES_ORDER.indexOf(s);
+  return i >= 0 && i < STATES_ORDER.length - 1 ? STATES_ORDER[i + 1] : s;
+}
+
+function toSlug(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+// ── API ───────────────────────────────────────────────────────────────────────
+
+async function apiFetch(path, opts = {}) {
+  const res = await fetch(path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+const api = {
+  get: (p) => apiFetch(p),
+  post: (p, b) => apiFetch(p, { method: 'POST', body: JSON.stringify(b) }),
+  patch: (p, b) => apiFetch(p, { method: 'PATCH', body: JSON.stringify(b) }),
+  del: (p) => apiFetch(p, { method: 'DELETE' }),
+};
+
+// ── StateBadge ────────────────────────────────────────────────────────────────
+
+function StateBadge({ state, size = 'md' }) {
+  const m = STATE_META[state];
+  if (!m) return null;
+  return (
+    <span className="badge" style={{
+      color: m.color, background: m.bg, borderColor: m.border,
+      fontSize: size === 'sm' ? '10px' : '11px',
+      padding: size === 'sm' ? '1px 6px' : '2px 8px',
+    }}>
+      {state} · {m.label}
+    </span>
+  );
+}
+
+// ── TopBar ────────────────────────────────────────────────────────────────────
+
+function TopBar({ allLists, currentListSlug, onSwitchList, onNewProject, onRefresh, loading }) {
+  return (
+    <div className="topbar">
+      <span className="topbar-title">Punch List</span>
+      {allLists && allLists.length > 0 && (
+        <select
+          className="topbar-list-select"
+          value={currentListSlug || ''}
+          onChange={e => onSwitchList(e.target.value)}
+        >
+          {allLists.map(l => (
+            <option key={l.slug} value={l.slug}>
+              {l.name || l.slug}
+            </option>
+          ))}
+        </select>
+      )}
+      <div className="topbar-spacer" />
+      <button className="btn btn-ghost btn-sm" onClick={onRefresh} title="Refresh">
+        {loading ? <span className="spinner" style={{width:14,height:14}} /> : '↻'}
+      </button>
+      <button className="btn btn-primary btn-sm" onClick={onNewProject}>
+        + Break Ground
+      </button>
+    </div>
+  );
+}
+
+// ── BoardRow ──────────────────────────────────────────────────────────────────
+
+function BoardRow({ project, isCurrent, onClick }) {
+  const s = project.checklistSummary || {};
+  const clStr = s.listCount > 0
+    ? `${s.listCount} list${s.listCount !== 1 ? 's' : ''} (${s.completedItems}/${s.totalItems})`
+    : '';
+  const ghIcon = project.githubVisibility === 'public' ? '🌐'
+    : project.githubVisibility === 'private' ? '🔒'
+    : project.githubRepo ? 'yes' : 'no';
+  const locStr = project.localDirectory ? 'yes' : 'no';
+  const opacity = project.state === 'G' ? 0.65 : 1;
+
+  return (
+    <div style={{ opacity }}>
+      <div className={`board-row${isCurrent ? ' is-current' : ''}`} onClick={onClick}>
+        <span className="row-indicator">{isCurrent ? '👉' : ''}</span>
+        <span className="row-name">{project.name}</span>
+        <span className="row-meta row-cl">{clStr}</span>
+        <span className="row-meta row-gh">{ghIcon}</span>
+        <span className="row-meta row-loc">{locStr}</span>
+      </div>
+      {project.nextStep && (
+        <div className="row-nextstep">
+          <span className="row-arrow">→</span>
+          <span>{project.nextStep}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── StateSection ──────────────────────────────────────────────────────────────
+
+function StateSection({ state, projects, currentSlug, onSelect }) {
+  const m = STATE_META[state];
+  if (!m || projects.length === 0) return null;
+  return (
+    <div className="state-section">
+      <div className="state-header">
+        <StateBadge state={state} size="sm" />
+        <span className="state-header-label">{m.label}</span>
+        <span className="state-header-count">{projects.length}</span>
+      </div>
+      {projects.map(p => (
+        <BoardRow
+          key={p.slug}
+          project={p}
+          isCurrent={p.slug === currentSlug}
+          onClick={() => onSelect(p.slug)}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── BoardView ─────────────────────────────────────────────────────────────────
+
+function BoardView({ listData, onSelect }) {
+  const { projects = [], currentProject } = listData;
+
+  const grouped = {};
+  STATES_ORDER.forEach(s => { grouped[s] = []; });
+  projects.forEach(p => {
+    if (grouped[p.state]) grouped[p.state].push(p);
+    else grouped['A'] = [...(grouped['A'] || []), p];
+  });
+
+  const hasProjects = projects.length > 0;
+
+  return (
+    <div>
+      {!hasProjects && (
+        <div className="empty-state">
+          <div className="empty-state-title">No projects yet</div>
+          <p>Click "Break Ground" to create your first project.</p>
+        </div>
+      )}
+      {STATES_ORDER.map(s => (
+        <StateSection
+          key={s}
+          state={s}
+          projects={grouped[s]}
+          currentSlug={currentProject}
+          onSelect={onSelect}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── InlineEditor ──────────────────────────────────────────────────────────────
+
+function InlineEditor({ value, placeholder, onSave, multiline = true }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value || '');
+  const [saving, setSaving] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => { setDraft(value || ''); }, [value]);
+  useEffect(() => { if (editing && ref.current) ref.current.focus(); }, [editing]);
+
+  async function save() {
+    setSaving(true);
+    try {
+      await onSave(draft.trim());
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function cancel() { setDraft(value || ''); setEditing(false); }
+
+  if (!editing) {
+    return (
+      <div
+        className="inline-text"
+        style={{ cursor: 'text', minHeight: 24, padding: '2px 4px', borderRadius: 3 }}
+        onClick={() => setEditing(true)}
+        title="Click to edit"
+      >
+        {value
+          ? <span>{value}</span>
+          : <span style={{ color: '#9C907E', fontStyle: 'italic' }}>{placeholder || 'Click to add…'}</span>
+        }
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {multiline
+        ? <textarea ref={ref} className="inline-textarea" value={draft} onChange={e => setDraft(e.target.value)} />
+        : <input ref={ref} className="form-input" value={draft} onChange={e => setDraft(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') cancel(); }}
+          />
+      }
+      <div className="inline-actions">
+        <button className="btn btn-primary btn-sm" onClick={save} disabled={saving}>
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+        <button className="btn btn-ghost btn-sm" onClick={cancel}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+// ── ChecklistSection ──────────────────────────────────────────────────────────
+
+function ChecklistSection({ projectSlug }) {
+  const [lists, setLists] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
+  const [items, setItems] = useState([]);
+  const [addText, setAddText] = useState('');
+  const [newListName, setNewListName] = useState('');
+  const [addingList, setAddingList] = useState(false);
+  const [loadingItems, setLoadingItems] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState(null);
+  const [dragId, setDragId] = useState(null);
+  const [dragOverId, setDragOverId] = useState(null);
+  const addRef = useRef(null);
+
+  async function loadLists() {
+    try {
+      const data = await api.get(`/api/projects/${projectSlug}/checklists`);
+      const ls = data.lists || [];
+      setLists(ls);
+      const cur = data.currentList || (ls[0] && ls[0].id) || null;
+      setSelectedId(prev => prev && ls.find(l => l.id === prev) ? prev : cur);
+    } catch {}
+  }
+
+  async function loadItems(listId) {
+    if (!listId) { setItems([]); return; }
+    setLoadingItems(true);
+    try {
+      const data = await api.get(`/api/projects/${projectSlug}/checklists/${listId}`);
+      const sorted = (data.items || []).slice().sort((a,b) => (a.order||0)-(b.order||0));
+      setItems(sorted);
+    } catch { setItems([]); }
+    finally { setLoadingItems(false); }
+  }
+
+  useEffect(() => { loadLists(); }, [projectSlug]);
+  useEffect(() => { loadItems(selectedId); }, [selectedId]);
+
+  async function toggleItem(e, itemId) {
+    e.stopPropagation();
+    if (!selectedId) return;
+    // Optimistic update — instant counter refresh
+    setItems(prev => prev.map(i => i.id === itemId ? { ...i, completed: !i.completed } : i));
+    try {
+      await api.post(`/api/projects/${projectSlug}/checklists/${selectedId}/items/${itemId}/toggle`);
+      loadLists(); // update tab counts
+    } catch {
+      loadItems(selectedId); // revert on failure
+    }
+  }
+
+  async function deleteItem(e, itemId) {
+    e.stopPropagation();
+    if (!selectedId) return;
+    setItems(prev => prev.filter(i => i.id !== itemId));
+    if (selectedItemId === itemId) setSelectedItemId(null);
+    try {
+      await api.del(`/api/projects/${projectSlug}/checklists/${selectedId}/items/${itemId}`);
+      loadLists();
+    } catch {
+      loadItems(selectedId);
+    }
+  }
+
+  async function reorderItem(itemId, newPosition) {
+    if (!selectedId) return;
+    setItems(prev => {
+      const arr = [...prev];
+      const fromIdx = arr.findIndex(i => i.id === itemId);
+      if (fromIdx < 0) return prev;
+      const [item] = arr.splice(fromIdx, 1);
+      arr.splice(Math.max(0, Math.min(newPosition - 1, arr.length)), 0, item);
+      return arr;
+    });
+    try {
+      await api.post(
+        `/api/projects/${projectSlug}/checklists/${selectedId}/items/${itemId}/reorder`,
+        { position: newPosition }
+      );
+    } catch {
+      loadItems(selectedId);
+    }
+  }
+
+  function handleMoveUp(e, itemId) {
+    e.stopPropagation();
+    const idx = items.findIndex(i => i.id === itemId);
+    if (idx > 0) reorderItem(itemId, idx); // 1-based: idx = one above current
+  }
+
+  function handleMoveDown(e, itemId) {
+    e.stopPropagation();
+    const idx = items.findIndex(i => i.id === itemId);
+    if (idx < items.length - 1) reorderItem(itemId, idx + 2);
+  }
+
+  function handleDragStart(e, itemId) {
+    setDragId(itemId);
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  function handleDragOver(e, itemId) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (itemId !== dragId) setDragOverId(itemId);
+  }
+
+  function handleDrop(e, targetId) {
+    e.preventDefault();
+    setDragOverId(null);
+    if (!dragId || dragId === targetId) { setDragId(null); return; }
+    const targetIdx = items.findIndex(i => i.id === targetId);
+    reorderItem(dragId, targetIdx + 1);
+    setDragId(null);
+  }
+
+  function handleDragEnd() {
+    setDragId(null);
+    setDragOverId(null);
+  }
+
+  async function addItem(e) {
+    e.preventDefault();
+    if (!addText.trim() || !selectedId) return;
+    await api.post(`/api/projects/${projectSlug}/checklists/${selectedId}/items`, { text: addText.trim() });
+    setAddText('');
+    loadItems(selectedId);
+    loadLists();
+  }
+
+  async function createList() {
+    if (!newListName.trim()) return;
+    await api.post(`/api/projects/${projectSlug}/checklists`, { name: newListName.trim() });
+    setNewListName('');
+    setAddingList(false);
+    await loadLists();
+  }
+
+  async function deleteList(listId) {
+    if (!window.confirm('Delete this checklist? Items will be lost.')) return;
+    await api.del(`/api/projects/${projectSlug}/checklists/${listId}?force=true`);
+    await loadLists();
+  }
+
+  const done = items.filter(i => i.completed).length;
+  const total = items.length;
+
+  return (
+    <div>
+      <div className="cl-tabs">
+        {lists.map(l => (
+          <button
+            key={l.id}
+            className={`cl-tab${l.id === selectedId ? ' active' : ''}`}
+            onClick={() => setSelectedId(l.id)}
+            onContextMenu={e => { e.preventDefault(); deleteList(l.id); }}
+            title="Right-click to delete"
+          >
+            {l.name}
+            <span style={{ marginLeft: 4, fontSize: 10, opacity: 0.7 }}>
+              {l.completedItems}/{l.totalItems}
+            </span>
+          </button>
+        ))}
+        {addingList
+          ? (
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginLeft: 4 }}>
+              <input
+                autoFocus
+                className="cl-add-input"
+                style={{ width: 140 }}
+                placeholder="List name"
+                value={newListName}
+                onChange={e => setNewListName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') createList(); if (e.key === 'Escape') setAddingList(false); }}
+              />
+              <button className="btn btn-primary btn-sm" onClick={createList}>Add</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setAddingList(false)}>✕</button>
+            </div>
+          )
+          : (
+            <button className="cl-tab cl-tab-add" onClick={() => setAddingList(true)} title="Add checklist">
+              +
+            </button>
+          )
+        }
+      </div>
+
+      {selectedId && (
+        <>
+          {total > 0 && (
+            <div className="cl-progress">{done}/{total} complete</div>
+          )}
+          {loadingItems
+            ? <div style={{ padding: '8px 0', color: '#9C907E', fontSize: 13 }}>Loading…</div>
+            : items.map((item, idx) => {
+              const isSelected = item.id === selectedItemId;
+              return (
+                <div
+                  key={item.id}
+                  className={[
+                    'cl-item',
+                    isSelected ? 'cl-selected' : '',
+                    item.id === dragId ? 'cl-dragging' : '',
+                    item.id === dragOverId ? 'cl-drag-over' : '',
+                  ].filter(Boolean).join(' ')}
+                  onClick={() => setSelectedItemId(isSelected ? null : item.id)}
+                  draggable
+                  onDragStart={e => handleDragStart(e, item.id)}
+                  onDragOver={e => handleDragOver(e, item.id)}
+                  onDrop={e => handleDrop(e, item.id)}
+                  onDragEnd={handleDragEnd}
+                >
+                  <span className="cl-drag-handle" title="Drag to reorder">⠿</span>
+                  <div
+                    className={`cl-check${item.completed ? ' done' : ''}`}
+                    onClick={e => toggleItem(e, item.id)}
+                  >
+                    <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                      <polyline points="2,6 5,9 10,3" stroke="#1A1A1A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                  <span className={`cl-text${item.completed ? ' done' : ''}`}>
+                    {item.text}
+                    {item.quantity && <span style={{ color: '#9C907E', marginLeft: 6 }}>×{item.quantity}</span>}
+                  </span>
+                  <div className="cl-move-btns">
+                    <button className="cl-move-btn" disabled={idx === 0}
+                      onClick={e => handleMoveUp(e, item.id)} title="Move up">▲</button>
+                    <button className="cl-move-btn" disabled={idx === items.length - 1}
+                      onClick={e => handleMoveDown(e, item.id)} title="Move down">▼</button>
+                  </div>
+                  <button className="cl-del" onClick={e => deleteItem(e, item.id)}>✕</button>
+                </div>
+              );
+            })
+          }
+          {total === 0 && !loadingItems && (
+            <div style={{ padding: '8px 4px', color: '#9C907E', fontSize: 13, fontStyle: 'italic' }}>
+              No items yet.
+            </div>
+          )}
+          <form className="cl-add-form" onSubmit={addItem}>
+            <input
+              ref={addRef}
+              className="cl-add-input"
+              placeholder="Add item…"
+              value={addText}
+              onChange={e => setAddText(e.target.value)}
+            />
+            <button type="submit" className="btn btn-secondary btn-sm" disabled={!addText.trim()}>Add</button>
+          </form>
+        </>
+      )}
+
+      {lists.length === 0 && !addingList && (
+        <div style={{ padding: '8px 4px', color: '#9C907E', fontSize: 13 }}>
+          No checklists. Click + to create one.
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── ProjectDetail ─────────────────────────────────────────────────────────────
+
+function ProjectDetail({ slug, currentSlug, onBack, onProjectChanged, onEditProject }) {
+  const [project, setProject] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(null);
+
+  async function load() {
+    setLoading(true); setError(null);
+    try {
+      const data = await api.get(`/api/projects/${slug}`);
+      setProject(data);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { load(); }, [slug]);
+
+  async function saveField(field, value) {
+    setSaving(field);
+    try {
+      await api.patch(`/api/projects/${slug}`, { [field]: value });
+      await load();
+      onProjectChanged();
+    } finally { setSaving(null); }
+  }
+
+  async function handleSetCurrent() {
+    await api.post(`/api/projects/${slug}/set-current`);
+    onProjectChanged();
+  }
+
+  async function handleAdvanceState() {
+    if (!project) return;
+    const ns = nextState(project.state);
+    if (ns === project.state) return;
+    const m = STATE_META[ns];
+    if (!window.confirm(`Advance to ${ns} · ${m.label}?`)) return;
+    await saveField('state', ns);
+  }
+
+  async function handleDelete() {
+    if (!project) return;
+    if (!window.confirm(`Delete "${project.name}"? This cannot be undone.`)) return;
+    try {
+      await api.del(`/api/projects/${slug}?force=true`);
+      onBack();
+      onProjectChanged();
+    } catch (e) {
+      // Retry shouldn't be needed since we pass force=true
+      alert(e.message);
+    }
+  }
+
+  if (loading) return (
+    <div style={{ textAlign: 'center', padding: 60 }}>
+      <span className="spinner" />
+    </div>
+  );
+
+  if (error) return (
+    <div>
+      <div className="error-bar">{error}</div>
+      <button className="btn btn-ghost" onClick={onBack}>← Back</button>
+    </div>
+  );
+
+  if (!project) return null;
+
+  const isCurrent = slug === currentSlug;
+  const ns = nextState(project.state);
+  const canAdvance = ns !== project.state;
+
+  return (
+    <div>
+      <button className="detail-back" onClick={onBack}>← Board</button>
+
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+        <div>
+          <h1 className="detail-name">{project.name}</h1>
+          <div className="detail-slug">{project.slug} · updated {project.updatedAt}</div>
+        </div>
+        <StateBadge state={project.state} />
+      </div>
+
+      <p className="detail-desc">{project.description}</p>
+
+      <div className="meta-grid">
+        <div className="meta-cell">
+          <div className="meta-cell-label">GitHub</div>
+          {project.githubRepo
+            ? <a className="meta-cell-link" href={project.githubRepo} target="_blank" rel="noreferrer">
+                {project.githubRepo.replace('https://github.com/', '')}
+                {project.githubVisibility && <span style={{ marginLeft: 6 }}>
+                  {project.githubVisibility === 'public' ? '🌐' : '🔒'}
+                </span>}
+              </a>
+            : <span className="meta-cell-value" style={{ color: '#9C907E' }}>—</span>
+          }
+        </div>
+        <div className="meta-cell">
+          <div className="meta-cell-label">Local Dir</div>
+          <div className="meta-cell-value">{project.localDirectory || '—'}</div>
+          {project.localDirectory && (
+            <div className="launch-btns">
+              <button className="btn btn-secondary btn-sm"
+                onClick={() => alert(`Run in terminal:\n\nclaude ${project.localDirectory}`)}>
+                ▶ Claude
+              </button>
+              <button className="btn btn-secondary btn-sm"
+                onClick={() => alert(`Run in terminal:\n\ncursor ${project.localDirectory}`)}>
+                ✏ Cursor
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="section-block" style={{ marginTop: 12 }}>
+        <div className="section-label">Next Step</div>
+        <InlineEditor
+          value={project.nextStep}
+          placeholder="What's next? Click to add…"
+          multiline={false}
+          onSave={v => saveField('nextStep', v || null)}
+        />
+      </div>
+
+      <div className="section-block">
+        <div className="section-label">Update Notes</div>
+        <InlineEditor
+          value={project.updateNotes}
+          placeholder="No notes yet. Click to add…"
+          onSave={v => saveField('updateNotes', v || null)}
+        />
+      </div>
+
+      <div className="section-block" style={{ marginTop: 12 }}>
+        <div className="section-label">Checklists</div>
+        <ChecklistSection projectSlug={slug} />
+      </div>
+
+      <div className="action-bar">
+        {!isCurrent && (
+          <button className="btn btn-secondary btn-sm" onClick={handleSetCurrent}>
+            👉 Set Current
+          </button>
+        )}
+        <button className="btn btn-secondary btn-sm" onClick={() => onEditProject(project)}>
+          Edit Project
+        </button>
+        {canAdvance && (
+          <button className="btn btn-primary btn-sm" onClick={handleAdvanceState}>
+            Advance to {ns} · {STATE_META[ns]?.label} →
+          </button>
+        )}
+        <div style={{ flex: 1 }} />
+        <button className="btn btn-danger btn-sm" onClick={handleDelete}>Delete</button>
+      </div>
+    </div>
+  );
+}
+
+// ── ProjectModal ──────────────────────────────────────────────────────────────
+
+function ProjectModal({ mode, initial, onSave, onCancel }) {
+  const isCreate = mode === 'create';
+  const [form, setForm] = useState({
+    slug: initial?.slug || '',
+    name: initial?.name || '',
+    description: initial?.description || '',
+    state: initial?.state || 'A',
+    githubRepo: initial?.githubRepo || '',
+    githubVisibility: initial?.githubVisibility || '',
+    localDirectory: initial?.localDirectory || '',
+    nextStep: initial?.nextStep || '',
+  });
+  const [slugManual, setSlugManual] = useState(!isCreate);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  function setField(k, v) {
+    setForm(f => {
+      const next = { ...f, [k]: v };
+      if (k === 'name' && !slugManual && isCreate) {
+        next.slug = toSlug(v);
+      }
+      return next;
+    });
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError(null);
+    if (!form.name.trim()) { setError('Name is required.'); return; }
+    if (isCreate && !form.slug.trim()) { setError('Slug is required.'); return; }
+    setSaving(true);
+    try {
+      await onSave(form);
+    } catch (ex) {
+      setError(ex.message);
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onCancel()}>
+      <div className="modal">
+        <div className="modal-title">{isCreate ? 'Break Ground' : 'Edit Project'}</div>
+        {error && <div className="error-bar">{error}</div>}
+        <form onSubmit={handleSubmit}>
+          <div className="form-row-2">
+            <div className="form-row">
+              <label className="form-label">Project Name *</label>
+              <input className="form-input" value={form.name} onChange={e => setField('name', e.target.value)} required />
+            </div>
+            <div className="form-row">
+              <label className="form-label">Slug *</label>
+              <input
+                className="form-input"
+                value={form.slug}
+                onChange={e => { setSlugManual(true); setField('slug', e.target.value); }}
+                disabled={!isCreate}
+                style={!isCreate ? { opacity: 0.6 } : {}}
+              />
+              {isCreate && <div className="form-hint">Auto-generated from name; kebab-case</div>}
+            </div>
+          </div>
+
+          <div className="form-row">
+            <label className="form-label">Description</label>
+            <textarea className="form-textarea" value={form.description} onChange={e => setField('description', e.target.value)} />
+          </div>
+
+          <div className="form-row-2">
+            <div className="form-row">
+              <label className="form-label">State</label>
+              <select className="form-select" value={form.state} onChange={e => setField('state', e.target.value)}>
+                {STATES_ORDER.map(s => (
+                  <option key={s} value={s}>{s} · {STATE_META[s].label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-row">
+              <label className="form-label">GitHub Visibility</label>
+              <select className="form-select" value={form.githubVisibility} onChange={e => setField('githubVisibility', e.target.value)}>
+                <option value="">— unknown —</option>
+                <option value="public">🌐 Public</option>
+                <option value="private">🔒 Private</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="form-row">
+            <label className="form-label">GitHub Repo URL</label>
+            <input className="form-input" value={form.githubRepo} onChange={e => setField('githubRepo', e.target.value)} placeholder="https://github.com/org/repo" />
+          </div>
+
+          <div className="form-row">
+            <label className="form-label">Local Directory</label>
+            <input className="form-input" value={form.localDirectory} onChange={e => setField('localDirectory', e.target.value)} placeholder="/path/to/project" />
+          </div>
+
+          <div className="form-row">
+            <label className="form-label">Next Step</label>
+            <input className="form-input" value={form.nextStep} onChange={e => setField('nextStep', e.target.value)} placeholder="What's next for this project?" />
+          </div>
+
+          <div className="form-footer">
+            <button type="button" className="btn btn-ghost" onClick={onCancel}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={saving}>
+              {saving ? 'Saving…' : isCreate ? 'Create Project' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── App ───────────────────────────────────────────────────────────────────────
+
+function App() {
+  const [view, setView] = useState('board');  // 'board' | 'detail' | 'modal'
+  const [modalMode, setModalMode] = useState('create');
+  const [modalInitial, setModalInitial] = useState(null);
+  const [listData, setListData] = useState({ projects: [], currentProject: null, listName: '' });
+  const [allLists, setAllLists] = useState([]);
+  const [currentListSlug, setCurrentListSlug] = useState(null);
+  const [selectedSlug, setSelectedSlug] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  async function loadAll() {
+    setLoading(true); setError(null);
+    try {
+      const [listMeta, projectData] = await Promise.all([
+        api.get('/api/list'),
+        api.get('/api/projects'),
+      ]);
+      setAllLists(listMeta.lists || []);
+      setCurrentListSlug(listMeta.currentList || null);
+      setListData(projectData);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadProjects() {
+    setLoading(true); setError(null);
+    try {
+      const data = await api.get('/api/projects');
+      setListData(data);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSwitchList(slug) {
+    if (slug === currentListSlug) return;
+    try {
+      await api.post('/api/list/switch', { slug });
+      setCurrentListSlug(slug);
+      setView('board');
+      setSelectedSlug(null);
+      await loadAll();
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  useEffect(() => { loadAll(); }, []);
+
+  function openDetail(slug) {
+    setSelectedSlug(slug);
+    setView('detail');
+  }
+
+  function openCreate() {
+    setModalMode('create');
+    setModalInitial(null);
+    setView('modal');
+  }
+
+  function openEdit(project) {
+    setModalMode('edit');
+    setModalInitial(project);
+    setView('modal');
+  }
+
+  async function handleSave(form) {
+    if (modalMode === 'create') {
+      await api.post('/api/projects', form);
+      await loadProjects();
+      setView('board');
+    } else {
+      await api.patch(`/api/projects/${form.slug}`, form);
+      await loadProjects();
+      setView('detail');
+    }
+  }
+
+  function handleModalCancel() {
+    setView(modalMode === 'create' ? 'board' : 'detail');
+  }
+
+  return (
+    <>
+      <TopBar
+        allLists={allLists}
+        currentListSlug={currentListSlug}
+        onSwitchList={handleSwitchList}
+        onNewProject={openCreate}
+        onRefresh={loadAll}
+        loading={loading}
+      />
+      <div className="main">
+        {error && <div className="error-bar">{error}</div>}
+
+        {view === 'board' && (
+          loading && listData.projects.length === 0
+            ? <div style={{ textAlign: 'center', padding: 60 }}><span className="spinner" /></div>
+            : <BoardView listData={listData} onSelect={openDetail} />
+        )}
+
+        {view === 'detail' && selectedSlug && (
+          <ProjectDetail
+            slug={selectedSlug}
+            currentSlug={listData.currentProject}
+            onBack={() => setView('board')}
+            onProjectChanged={loadProjects}
+            onEditProject={openEdit}
+          />
+        )}
+      </div>
+
+      {view === 'modal' && (
+        <ProjectModal
+          mode={modalMode}
+          initial={modalInitial}
+          onSave={handleSave}
+          onCancel={handleModalCancel}
+        />
+      )}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

@@ -2,6 +2,8 @@
 
 Agentic workflow coordination that organizes all your projects and keeps you in flow by eliminating context-switching overhead. A super lightweight skill set that enables Claude and other skills to actually help you get work done across ALL your projects.
 
+A **web UI** is also included — run `python web/app.py` to open a local board in your browser (requires Flask: `pip install flask`).
+
 ---
 
 ## Dependencies

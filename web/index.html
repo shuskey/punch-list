@@ -259,6 +259,19 @@ a { color: inherit; text-decoration: none; }
 .inline-textarea:focus { border-color: #F5C518; box-shadow: 0 0 0 2px rgba(245,197,24,0.2); }
 .inline-actions { display: flex; gap: 6px; margin-top: 6px; }
 
+/* Field action buttons */
+.field-actions { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
+.field-action-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; padding: 3px 9px; border-radius: 4px; cursor: pointer;
+  border: 1px solid #D8D0C0; background: #F0EBE0; color: #4A4035;
+  font-family: inherit; transition: background 0.1s;
+}
+.field-action-btn:hover:not(:disabled) { background: #E8E0D0; }
+.field-action-btn:disabled { opacity: 0.5; cursor: default; }
+.field-action-btn.valid { border-color: #4CAF50; color: #2E7D32; background: #F0FBF0; }
+.field-action-btn.error { border-color: #E57373; color: #C62828; background: #FFF0F0; }
+
 /* AI-DLC */
 .aidlc-toggle {
   display: flex; align-items: center; gap: 8px;
@@ -1194,6 +1207,54 @@ function ProjectModal({ mode, initial, onSave, onCancel }) {
   const [slugManual, setSlugManual] = useState(!isCreate);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [repoVal, setRepoVal] = useState(null);    // null | 'busy' | 'ok' | 'err'
+  const [repoValMsg, setRepoValMsg] = useState('');
+  const [repoCreate, setRepoCreate] = useState(null); // null | 'busy' | 'ok' | 'err'
+  const [repoCreateMsg, setRepoCreateMsg] = useState('');
+  const [dirVal, setDirVal] = useState(null);
+  const [dirValMsg, setDirValMsg] = useState('');
+  const [dirCreate, setDirCreate] = useState(null);
+  const [dirCreateMsg, setDirCreateMsg] = useState('');
+
+  async function handleValidateRepo() {
+    setRepoVal('busy'); setRepoValMsg('');
+    try {
+      const d = await api.post('/api/util/validate-repo', { url: form.githubRepo });
+      setRepoVal(d.valid ? 'ok' : 'err');
+      setRepoValMsg(d.valid ? '✓ Found' : (d.error || '✗ Not found'));
+    } catch (e) { setRepoVal('err'); setRepoValMsg('✗ ' + e.message); }
+  }
+
+  async function handleCreateRepo() {
+    if (!form.slug) { setRepoCreate('err'); setRepoCreateMsg('Set a slug first'); return; }
+    setRepoCreate('busy'); setRepoCreateMsg('');
+    try {
+      const vis = form.githubVisibility || 'private';
+      const d = await api.post('/api/util/create-repo', { name: form.slug, visibility: vis });
+      setField('githubRepo', d.url);
+      setRepoCreate('ok'); setRepoCreateMsg('✓ Created');
+      setRepoVal('ok'); setRepoValMsg('✓ Found');
+    } catch (e) { setRepoCreate('err'); setRepoCreateMsg(e.message); }
+  }
+
+  async function handleValidateDir() {
+    setDirVal('busy'); setDirValMsg('');
+    try {
+      const d = await api.post('/api/util/validate-directory', { path: form.localDirectory });
+      setDirVal(d.valid ? 'ok' : 'err');
+      setDirValMsg(d.valid ? '✓ Exists' : '✗ Not found');
+    } catch (e) { setDirVal('err'); setDirValMsg('✗ ' + e.message); }
+  }
+
+  async function handleCreateDir() {
+    if (!form.localDirectory) { setDirCreate('err'); setDirCreateMsg('Enter a path first'); return; }
+    setDirCreate('busy'); setDirCreateMsg('');
+    try {
+      await api.post('/api/util/create-directory', { path: form.localDirectory });
+      setDirCreate('ok'); setDirCreateMsg('✓ Created');
+      setDirVal('ok'); setDirValMsg('✓ Exists');
+    } catch (e) { setDirCreate('err'); setDirCreateMsg(e.message); }
+  }
 
   function setField(k, v) {
     setForm(f => {
@@ -1269,12 +1330,44 @@ function ProjectModal({ mode, initial, onSave, onCancel }) {
 
           <div className="form-row">
             <label className="form-label">GitHub Repo URL</label>
-            <input className="form-input" value={form.githubRepo} onChange={e => setField('githubRepo', e.target.value)} placeholder="https://github.com/org/repo" />
+            <input className="form-input" value={form.githubRepo}
+              onChange={e => { setField('githubRepo', e.target.value); setRepoVal(null); setRepoValMsg(''); }}
+              placeholder="https://github.com/org/repo" />
+            <div className="field-actions">
+              <button type="button"
+                className={`field-action-btn${repoVal === 'ok' ? ' valid' : repoVal === 'err' ? ' error' : ''}`}
+                onClick={handleValidateRepo}
+                disabled={!form.githubRepo || repoVal === 'busy'}>
+                {repoVal === 'busy' ? '…' : repoVal === 'ok' ? repoValMsg : repoVal === 'err' ? repoValMsg : '◎ Validate Repo'}
+              </button>
+              <button type="button"
+                className={`field-action-btn${repoCreate === 'ok' ? ' valid' : repoCreate === 'err' ? ' error' : ''}`}
+                onClick={handleCreateRepo}
+                disabled={repoCreate === 'busy'}>
+                {repoCreate === 'busy' ? 'Creating…' : repoCreate === 'ok' ? repoCreateMsg : repoCreate === 'err' ? '✗ ' + repoCreateMsg : '+ Create New Repo'}
+              </button>
+            </div>
           </div>
 
           <div className="form-row">
             <label className="form-label">Local Directory</label>
-            <input className="form-input" value={form.localDirectory} onChange={e => setField('localDirectory', e.target.value)} placeholder="/path/to/project" />
+            <input className="form-input" value={form.localDirectory}
+              onChange={e => { setField('localDirectory', e.target.value); setDirVal(null); setDirValMsg(''); }}
+              placeholder="/path/to/project" />
+            <div className="field-actions">
+              <button type="button"
+                className={`field-action-btn${dirVal === 'ok' ? ' valid' : dirVal === 'err' ? ' error' : ''}`}
+                onClick={handleValidateDir}
+                disabled={!form.localDirectory || dirVal === 'busy'}>
+                {dirVal === 'busy' ? '…' : dirVal === 'ok' ? dirValMsg : dirVal === 'err' ? dirValMsg : '◎ Validate Dir'}
+              </button>
+              <button type="button"
+                className={`field-action-btn${dirCreate === 'ok' ? ' valid' : dirCreate === 'err' ? ' error' : ''}`}
+                onClick={handleCreateDir}
+                disabled={dirCreate === 'busy'}>
+                {dirCreate === 'busy' ? 'Creating…' : dirCreate === 'ok' ? dirCreateMsg : dirCreate === 'err' ? '✗ ' + dirCreateMsg : '+ Create Directory'}
+              </button>
+            </div>
           </div>
 
           <div className="form-row">

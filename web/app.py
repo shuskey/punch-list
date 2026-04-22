@@ -248,6 +248,58 @@ def reorder_item(slug, list_id, item_id):
     return jsonify(data), status
 
 
+# ── Utilities ────────────────────────────────────────────────────────────────
+
+@app.route("/api/util/validate-repo", methods=["POST"])
+def validate_repo():
+    import re
+    url = (request.json or {}).get("url", "").strip()
+    m = re.search(r'github\.com[:/]([^/]+/[^/.?\s]+)', url)
+    if not m:
+        return jsonify({"valid": False, "error": "Not a valid GitHub URL"}), 200
+    repo = m.group(1).rstrip("/")
+    r = subprocess.run(["gh", "repo", "view", repo, "--json", "name"],
+                       capture_output=True, text=True)
+    return jsonify({"valid": r.returncode == 0}), 200
+
+
+@app.route("/api/util/create-repo", methods=["POST"])
+def create_repo():
+    body = request.json or {}
+    name = (body.get("name") or "").strip()
+    visibility = body.get("visibility") or "private"
+    if not name:
+        return jsonify({"error": "name required"}), 400
+    flag = "--public" if visibility == "public" else "--private"
+    r = subprocess.run(["gh", "repo", "create", name, flag],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        return jsonify({"error": r.stderr.strip() or r.stdout.strip()}), 400
+    url = r.stdout.strip().splitlines()[-1].strip()
+    if not url.startswith("http"):
+        url = f"https://github.com/{name}"
+    return jsonify({"url": url}), 200
+
+
+@app.route("/api/util/validate-directory", methods=["POST"])
+def validate_directory():
+    path = (request.json or {}).get("path", "").strip()
+    p = Path(path) if path else None
+    return jsonify({"valid": bool(p and p.exists() and p.is_dir())}), 200
+
+
+@app.route("/api/util/create-directory", methods=["POST"])
+def create_directory():
+    path = (request.json or {}).get("path", "").strip()
+    if not path:
+        return jsonify({"error": "path required"}), 400
+    try:
+        Path(path).mkdir(parents=True, exist_ok=True)
+        return jsonify({"ok": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
 # ── Launch ────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":

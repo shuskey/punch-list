@@ -9,6 +9,7 @@
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/marked@12.0.0/marked.min.js" crossorigin="anonymous"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
@@ -258,6 +259,30 @@ a { color: inherit; text-decoration: none; }
 .inline-textarea:focus { border-color: #F5C518; box-shadow: 0 0 0 2px rgba(245,197,24,0.2); }
 .inline-actions { display: flex; gap: 6px; margin-top: 6px; }
 
+/* AI-DLC */
+.aidlc-toggle {
+  display: flex; align-items: center; gap: 8px;
+  background: none; border: none; padding: 0;
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  color: #6B6452; cursor: pointer; letter-spacing: 0.04em; text-transform: uppercase;
+}
+.aidlc-toggle:hover { color: #1A1A1A; }
+.aidlc-body {
+  margin-top: 10px; padding: 14px 16px;
+  background: #FDFAF5; border: 1px solid #E8E0D0; border-radius: 6px;
+  font-size: 13px; line-height: 1.65; color: #2A2A2A;
+}
+.aidlc-body h1,.aidlc-body h2,.aidlc-body h3 { font-size: 14px; font-weight: 700; margin: 12px 0 4px; }
+.aidlc-body h1 { font-size: 16px; }
+.aidlc-body p { margin: 4px 0; }
+.aidlc-body ul,.aidlc-body ol { padding-left: 18px; margin: 4px 0; }
+.aidlc-body li { margin: 2px 0; }
+.aidlc-body table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 12px; }
+.aidlc-body th,.aidlc-body td { border: 1px solid #D8D0C0; padding: 4px 8px; text-align: left; }
+.aidlc-body th { background: #F0EBE0; font-weight: 600; }
+.aidlc-body code { background: #EDE8DF; border-radius: 3px; padding: 1px 4px; font-size: 12px; }
+.aidlc-body hr { border: none; border-top: 1px solid #D8D0C0; margin: 10px 0; }
+
 /* Checklists */
 .cl-tabs {
   display: flex; gap: 4px; align-items: center;
@@ -500,6 +525,8 @@ function TopBar({ allLists, currentListSlug, onSwitchList, onNewProject, onRefre
               {l.name || l.slug}
             </option>
           ))}
+          <option disabled>──────────</option>
+          <option value="__new__">+ Add new punch list…</option>
         </select>
       )}
       <div className="topbar-spacer" />
@@ -1040,8 +1067,12 @@ function ProjectDetail({ slug, currentSlug, onBack, onProjectChanged, onEditProj
                 ▶ Claude
               </button>
               <button className="btn btn-secondary btn-sm"
-                onClick={() => alert(`Run in terminal:\n\ncursor ${project.localDirectory}`)}>
+                onClick={() => api.post(`/api/projects/${project.slug}/open-cursor`, {}).catch(e => alert(e.message))}>
                 ✏ Cursor
+              </button>
+              <button className="btn btn-secondary btn-sm"
+                onClick={() => api.post(`/api/projects/${project.slug}/open-terminal`, {}).catch(e => alert(e.message))}>
+                ⬛ Terminal
               </button>
             </div>
           )}
@@ -1072,6 +1103,8 @@ function ProjectDetail({ slug, currentSlug, onBack, onProjectChanged, onEditProj
         <ChecklistSection projectSlug={slug} />
       </div>
 
+      <AidlcSection projectSlug={slug} />
+
       <div className="action-bar">
         {!isCurrent && (
           <button className="btn btn-secondary btn-sm" onClick={handleSetCurrent}>
@@ -1089,6 +1122,57 @@ function ProjectDetail({ slug, currentSlug, onBack, onProjectChanged, onEditProj
         <div style={{ flex: 1 }} />
         <button className="btn btn-danger btn-sm" onClick={handleDelete}>Delete</button>
       </div>
+    </div>
+  );
+}
+
+// ── ProjectModal ──────────────────────────────────────────────────────────────
+
+// ── AidlcSection ─────────────────────────────────────────────────────────────
+
+function AidlcSection({ projectSlug }) {
+  const [content, setContent] = useState(undefined);
+  const [refreshing, setRefreshing] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  function load() {
+    return api.get(`/api/projects/${projectSlug}/aidlc-state`)
+      .then(d => setContent(d.content ?? null))
+      .catch(() => setContent(null));
+  }
+
+  async function handleRefresh(e) {
+    e.stopPropagation();
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }
+
+  useEffect(() => { load(); }, [projectSlug]);
+
+  if (!content) return null;
+
+  return (
+    <div className="section-block" style={{ marginTop: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button className="aidlc-toggle" onClick={() => setOpen(o => !o)}>
+          <span>{open ? '▾' : '▸'}</span> AI-DLC State
+        </button>
+        <button
+          className="btn btn-ghost btn-sm"
+          onClick={handleRefresh}
+          title="Reload from disk"
+          style={{ fontSize: 13, padding: '2px 6px' }}
+        >
+          {refreshing ? <span className="spinner" style={{width:12,height:12}} /> : '↻'}
+        </button>
+      </div>
+      {open && (
+        <div
+          className="aidlc-body"
+          dangerouslySetInnerHTML={{ __html: marked.parse(content) }}
+        />
+      )}
     </div>
   );
 }
@@ -1222,6 +1306,7 @@ function App() {
   const [selectedSlug, setSelectedSlug] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showNewListModal, setShowNewListModal] = useState(false);
 
   async function loadAll() {
     setLoading(true); setError(null);
@@ -1253,6 +1338,10 @@ function App() {
   }
 
   async function handleSwitchList(slug) {
+    if (slug === '__new__') {
+      setShowNewListModal(true);
+      return;
+    }
     if (slug === currentListSlug) return;
     try {
       await api.post('/api/list/switch', { slug });
@@ -1263,6 +1352,14 @@ function App() {
     } catch (e) {
       setError(e.message);
     }
+  }
+
+  async function handleCreateList(form) {
+    await api.post('/api/list', form);
+    setShowNewListModal(false);
+    setView('board');
+    setSelectedSlug(null);
+    await loadAll();
   }
 
   useEffect(() => { loadAll(); }, []);
@@ -1338,7 +1435,72 @@ function App() {
           onCancel={handleModalCancel}
         />
       )}
+
+      {showNewListModal && (
+        <NewListModal
+          onSave={handleCreateList}
+          onCancel={() => setShowNewListModal(false)}
+        />
+      )}
     </>
+  );
+}
+
+function NewListModal({ onSave, onCancel }) {
+  const [name, setName] = useState('');
+  const [slug, setSlug] = useState('');
+  const [slugManual, setSlugManual] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  function handleName(v) {
+    setName(v);
+    if (!slugManual) setSlug(toSlug(v));
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError(null);
+    if (!name.trim()) { setError('Name is required.'); return; }
+    if (!slug.trim()) { setError('Slug is required.'); return; }
+    setSaving(true);
+    try {
+      await onSave({ slug: slug.trim(), name: name.trim() });
+    } catch (ex) {
+      setError(ex.message);
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onCancel()}>
+      <div className="modal">
+        <div className="modal-title">Add Punch List</div>
+        {error && <div className="error-bar">{error}</div>}
+        <form onSubmit={handleSubmit}>
+          <div className="form-row">
+            <label className="form-label">Name *</label>
+            <input className="form-input" value={name} onChange={e => handleName(e.target.value)} autoFocus required />
+          </div>
+          <div className="form-row">
+            <label className="form-label">Slug *</label>
+            <input
+              className="form-input"
+              value={slug}
+              onChange={e => { setSlugManual(true); setSlug(e.target.value); }}
+              required
+            />
+            <div className="form-hint">Auto-generated from name; kebab-case</div>
+          </div>
+          <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+            <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={saving}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={saving}>
+              {saving ? 'Creating…' : 'Create & Switch'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
 

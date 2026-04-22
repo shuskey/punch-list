@@ -47,8 +47,16 @@ def index():
 
 # ── List ──────────────────────────────────────────────────────────────────────
 
-@app.route("/api/list")
-def get_list():
+@app.route("/api/list", methods=["GET", "POST"])
+def list_endpoint():
+    if request.method == "POST":
+        body = request.json or {}
+        slug = (body.get("slug") or "").strip()
+        name = (body.get("name") or "").strip()
+        if not slug or not name:
+            return jsonify({"error": "slug and name required"}), 400
+        data, status = run_pl("list", "create", slug, name, "--set-current")
+        return jsonify(data), status
     data, status = run_pl("list", "show")
     return jsonify(data), status
 
@@ -126,6 +134,47 @@ def delete_project(slug):
 def set_current(slug):
     data, status = run_pl("project", "set-current", slug)
     return jsonify(data), status
+
+
+@app.route("/api/projects/<slug>/open-terminal", methods=["POST"])
+def open_terminal(slug):
+    data, status = run_pl("project", "show", slug)
+    if status != 200:
+        return jsonify(data), status
+    local_dir = (data.get("project") or data).get("localDirectory") or ""
+    if not local_dir:
+        return jsonify({"error": "No local directory set for this project"}), 400
+    subprocess.Popen(
+        ["powershell.exe", "-NoExit", "-Command", f"Set-Location '{local_dir}'"],
+        creationflags=subprocess.CREATE_NEW_CONSOLE,
+    )
+    return jsonify({"ok": True}), 200
+
+
+@app.route("/api/projects/<slug>/aidlc-state")
+def aidlc_state(slug):
+    data, status = run_pl("project", "show", slug)
+    if status != 200:
+        return jsonify(data), status
+    local_dir = (data.get("project") or data).get("localDirectory") or ""
+    if not local_dir:
+        return jsonify({"content": None}), 200
+    state_file = Path(local_dir) / "aidlc-docs" / "aidlc-state.md"
+    if not state_file.exists():
+        return jsonify({"content": None}), 200
+    return jsonify({"content": state_file.read_text(encoding="utf-8")}), 200
+
+
+@app.route("/api/projects/<slug>/open-cursor", methods=["POST"])
+def open_cursor(slug):
+    data, status = run_pl("project", "show", slug)
+    if status != 200:
+        return jsonify(data), status
+    local_dir = (data.get("project") or data).get("localDirectory") or ""
+    if not local_dir:
+        return jsonify({"error": "No local directory set for this project"}), 400
+    subprocess.Popen(["cursor", local_dir], shell=True)
+    return jsonify({"ok": True}), 200
 
 
 # ── Checklists ────────────────────────────────────────────────────────────────
